@@ -1,0 +1,13 @@
+{
+  "name": "video-pipeline",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w packages/editor",
+    "dev": "npm run dev -w packages/editor",
+    "prepare": "npm run build"
+  }
+}

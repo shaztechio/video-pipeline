@@ -1,0 +1,44 @@
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-wrapper {
+  flex: 1;
+  margin-top: 49px; /* toolbar height */
+}
+
+/* Override React Flow defaults to match dark theme */
+.react-flow__edge-path {
+  stroke: #8b949e;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #a371f7;
+}
+
+.react-flow__connection-path {
+  stroke: #a371f7;
+  stroke-width: 2;
+}
+
+.react-flow__controls {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: #0d1117;
+  border-bottom: 1px solid #21262d;
+  fill: #8b949e;
+}
+
+.react-flow__controls-button:hover {
+  background: #21262d;
+  fill: #c9d1d9;
+}

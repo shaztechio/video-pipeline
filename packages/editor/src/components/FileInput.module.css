@@ -1,0 +1,56 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 5px;
+  transition: border-color 0.15s, background 0.15s;
+  overflow: hidden;
+  width: 100%;
+}
+
+.wrapper:focus-within {
+  border-color: #388bfd;
+}
+
+.wrapper.dragOver {
+  border-color: #388bfd;
+  background: #0d1a2d;
+}
+
+.textInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #c9d1d9;
+  font-size: 12px;
+  padding: 5px 8px;
+  outline: none;
+  min-width: 0;
+}
+
+.textInput::placeholder {
+  color: #484f58;
+}
+
+.browseBtn {
+  background: none;
+  border: none;
+  border-left: 1px solid #21262d;
+  color: #6e7681;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 7px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.1s, background 0.1s;
+}
+
+.browseBtn:hover {
+  color: #c9d1d9;
+  background: #21262d;
+}
+
+.hidden {
+  display: none;
+}

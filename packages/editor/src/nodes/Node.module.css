@@ -1,0 +1,266 @@
+.node {
+  background: #16213e;
+  border: 1.5px solid #0f3460;
+  border-radius: 10px;
+  min-width: 260px;
+  max-width: 320px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  font-size: 12px;
+  color: #c9d1d9;
+  transition: border-color 0.15s;
+}
+
+.node.selected {
+  border-color: #e94560;
+  box-shadow: 0 0 0 2px rgba(233,69,96,0.25), 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.cutter { border-top: 3px solid #e94560; }
+.stitcher { border-top: 3px solid #533483; }
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid #0f3460;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #8b949e;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.labelInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e0e0e0;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+.input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 5px;
+  color: #c9d1d9;
+  font-size: 12px;
+  padding: 5px 8px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: #388bfd;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #c9d1d9;
+}
+
+.checkboxRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #c9d1d9;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.addBtn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  color: #8b949e;
+  font-size: 10px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.addBtn:hover {
+  background: #30363d;
+  color: #c9d1d9;
+}
+
+.inputRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: #6e7681;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: color 0.1s;
+}
+
+.removeBtn:hover {
+  color: #e94560;
+}
+
+.hint {
+  font-size: 10px;
+  color: #6e7681;
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
+.dragHandle {
+  cursor: grab;
+  color: #6e7681;
+  font-size: 14px;
+  padding: 0 4px;
+  flex-shrink: 0;
+  user-select: none;
+  line-height: 1;
+  touch-action: none;
+}
+
+.dragHandle:hover {
+  color: #c9d1d9;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.inputRow.dragging {
+  opacity: 0.35;
+}
+
+.inputRow.dropTarget {
+  border-top: 2px solid #388bfd;
+  margin-top: -2px;
+}
+
+.inputRow.dropAfter {
+  border-bottom: 2px solid #388bfd;
+  margin-bottom: -2px;
+}
+
+.edgeItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: #8b949e;
+  font-size: 12px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.stepperRow {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.stepperRow .input {
+  flex: 1;
+}
+
+.stepperBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.stepBtn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 3px;
+  color: #8b949e;
+  font-size: 8px;
+  padding: 0 5px;
+  cursor: pointer;
+  line-height: 1;
+  flex: 1;
+  transition: background 0.1s, color 0.1s;
+}
+
+.stepBtn:hover {
+  background: #30363d;
+  color: #c9d1d9;
+}
+
+.edgeBadge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #a371f7;
+  background: #1a1030;
+  border: 1px solid #533483;
+  border-radius: 3px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+}
+
+.handle {
+  width: 10px;
+  height: 10px;
+  background: #533483;
+  border: 2px solid #a371f7;
+  border-radius: 50%;
+}
