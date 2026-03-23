@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useReactFlow } from '@xyflow/react'
 import { useStore } from '../store.js'
 import styles from './Toolbar.module.css'
 
@@ -31,8 +32,29 @@ export default function Toolbar() {
   const isDirty = useStore((s) => s.isDirty)
   const saveStatus = useStore((s) => s.saveStatus)
   const specMeta = useStore((s) => s.specMeta)
+  const updateSpecName = useStore((s) => s.updateSpecName)
 
+  const [editingName, setEditingName] = useState(false)
+  const [nameText, setNameText] = useState(specMeta.name)
+
+  // Keep local text in sync when spec loads
+  useEffect(() => { setNameText(specMeta.name) }, [specMeta.name])
+
+  function commitName() {
+    const trimmed = nameText.trim()
+    if (trimmed && trimmed !== specMeta.name) updateSpecName(trimmed)
+    else setNameText(specMeta.name)
+    setEditingName(false)
+  }
+
+  const { screenToFlowPosition } = useReactFlow()
   const serverStatus = useServerStatus()
+
+  function handleAddNode(type) {
+    // Place the new node at the current viewport center
+    const pos = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
+    addNode(type, { x: pos.x - 140, y: pos.y - 100 })
+  }
 
   const saveLabel =
     saveStatus === 'saving' ? 'Saving…'
@@ -43,35 +65,55 @@ export default function Toolbar() {
   return (
     <div className={styles.toolbar}>
       <div className={styles.left}>
-        <span className={styles.pipelineName}>{specMeta.name}</span>
+        {editingName ? (
+          <input
+            className={styles.pipelineNameInput}
+            value={nameText}
+            autoFocus
+            onChange={(e) => setNameText(e.target.value)}
+            onBlur={commitName}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitName()
+              if (e.key === 'Escape') { setNameText(specMeta.name); setEditingName(false) }
+            }}
+          />
+        ) : (
+          <span
+            className={styles.pipelineName}
+            title="Click to rename"
+            onClick={() => setEditingName(true)}
+          >
+            {specMeta.name}
+          </span>
+        )}
         <div className={styles.divider} />
         <button
           className={`${styles.addBtn} ${styles.inputFile}`}
-          onClick={() => addNode('input-file')}
+          onClick={() => handleAddNode('input-file')}
         >
           📄 Add Input File
         </button>
         <button
           className={`${styles.addBtn} ${styles.inputFolder}`}
-          onClick={() => addNode('input-folder')}
+          onClick={() => handleAddNode('input-folder')}
         >
           📂 Add Input Folder
         </button>
         <button
           className={`${styles.addBtn} ${styles.cutter}`}
-          onClick={() => addNode('video-cutter')}
+          onClick={() => handleAddNode('video-cutter')}
         >
           ✂ Add Cutter
         </button>
         <button
           className={`${styles.addBtn} ${styles.stitcher}`}
-          onClick={() => addNode('video-stitcher')}
+          onClick={() => handleAddNode('video-stitcher')}
         >
           ⧓ Add Stitcher
         </button>
         <button
           className={`${styles.addBtn} ${styles.outputFolder}`}
-          onClick={() => addNode('output-folder')}
+          onClick={() => handleAddNode('output-folder')}
         >
           📁 Add Output Folder
         </button>

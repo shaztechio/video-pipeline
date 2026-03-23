@@ -102,6 +102,10 @@ export const useStore = create((set, get) => ({
     }))
   },
 
+  updateSpecName(name) {
+    set((s) => ({ specMeta: { ...s.specMeta, name }, isDirty: true }))
+  },
+
   updateNodeLabel(nodeId, label) {
     set((s) => ({
       nodes: s.nodes.map((n) =>
@@ -111,7 +115,7 @@ export const useStore = create((set, get) => ({
     }))
   },
 
-  addNode(type) {
+  addNode(type, position) {
     const id = makeId(type)
     const defaults =
       type === 'video-cutter' ? { segments: 2, duration: null, sceneDetect: null, output: null, verify: false, reEncode: false }
@@ -131,11 +135,12 @@ export const useStore = create((set, get) => ({
     const node = {
       id,
       type,
-      position: { x: 200 + Math.random() * 200, y: 150 + Math.random() * 150 },
+      position: position ?? { x: 200 + Math.random() * 200, y: 150 + Math.random() * 150 },
       data: { label: labelMap[type] ?? type, config: defaults }
     }
 
     set((s) => ({ nodes: [...s.nodes, node], isDirty: true }))
+    return node
   },
 
   deleteNode(nodeId) {

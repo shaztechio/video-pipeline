@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react'
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
@@ -27,6 +28,10 @@ const NODE_TYPES = {
 }
 
 export default function App() {
+  return <ReactFlowProvider><AppInner /></ReactFlowProvider>
+}
+
+function AppInner() {
   const nodes = useStore((s) => s.nodes)
   const edges = useStore((s) => s.edges)
   const onNodesChange = useStore((s) => s.onNodesChange)
@@ -97,6 +102,8 @@ export default function App() {
               : '#533483'
             }
             maskColor="rgba(13,17,23,0.7)"
+            maskStrokeColor="#e94560"
+            maskStrokeWidth={4}
             style={{ background: '#0d1117', border: '1px solid #21262d' }}
           />
         </ReactFlow>

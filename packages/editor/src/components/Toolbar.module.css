@@ -30,6 +30,25 @@
   font-weight: 700;
   color: #e0e0e0;
   letter-spacing: 0.02em;
+  cursor: text;
+}
+
+.pipelineName:hover {
+  color: #fff;
+}
+
+.pipelineNameInput {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e0e0e0;
+  letter-spacing: 0.02em;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #388bfd;
+  outline: none;
+  padding: 0;
+  min-width: 80px;
+  width: auto;
 }
 
 .divider {

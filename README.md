@@ -43,10 +43,11 @@ video-pipeline edit my-workflow.json
 ```
 
 The editor lets you:
-- Drag **Input File**, **Input Folder**, **Cutter**, **Stitcher**, and **Output Folder** nodes onto the canvas
+- Drag **Input File**, **Input Folder**, **Cutter**, **Stitcher**, and **Output Folder** nodes onto the canvas — new nodes appear centred in the current viewport
 - Connect Input File or Input Folder to a Cutter's left handle to supply its input
 - Connect a Cutter or Stitcher output handle to one or more Output Folder nodes
 - Configure each node's parameters directly on the node
+- Click the pipeline name in the toolbar to rename it (saved with the spec)
 - Use the native OS file/folder picker (📁) on any file field
 - Set a glob filter on Input Folder nodes (e.g. `*.mp4`; blank = all files)
 - Drag inputs to reorder them within a Stitcher node
