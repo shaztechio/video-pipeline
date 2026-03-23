@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/shaztechio/video-pipeline/pipeline.schema.json",
+  "title": "video-pipeline spec",
+  "description": "Pipeline specification for the video-pipeline tool",
+  "type": "object",
+  "required": ["version", "name", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "type": "string",
+      "enum": ["1"],
+      "description": "Spec format version"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pipeline name"
+    },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/node" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/edge" }
+    }
+  },
+  "definitions": {
+    "position": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "type", "position", "config"],
+      "additionalProperties": false,
+      "properties": {
+        "id":       { "type": "string", "minLength": 1 },
+        "type":     { "$ref": "#/definitions/nodeType" },
+        "label":    { "type": "string" },
+        "position": { "$ref": "#/definitions/position" },
+        "config":   { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "video-cutter" } }, "required": ["type"] },
+          "then": { "properties": { "config": { "$ref": "#/definitions/cutterConfig" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "video-stitcher" } }, "required": ["type"] },
+          "then": { "properties": { "config": { "$ref": "#/definitions/stitcherConfig" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "output-folder" } }, "required": ["type"] },
+          "then": { "properties": { "config": { "$ref": "#/definitions/outputFolderConfig" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "input-file" } }, "required": ["type"] },
+          "then": { "properties": { "config": { "$ref": "#/definitions/inputFileConfig" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "input-folder" } }, "required": ["type"] },
+          "then": { "properties": { "config": { "$ref": "#/definitions/inputFolderConfig" } } }
+        }
+      ]
+    },
+    "nodeType": {
+      "type": "string",
+      "enum": ["video-cutter", "video-stitcher", "output-folder", "input-file", "input-folder"]
+    },
+    "cutterConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "input":       { "type": ["string", "null"] },
+        "segments":    { "type": ["integer", "null"], "minimum": 1 },
+        "duration":    { "type": ["number", "null"],  "exclusiveMinimum": 0 },
+        "sceneDetect": { "type": ["number", "boolean", "null"] },
+        "output":      { "type": ["string", "null"] },
+        "verify":      { "type": "boolean" },
+        "reEncode":    { "type": "boolean" }
+      }
+    },
+    "inputOrderItem": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type":          { "type": "string", "enum": ["fixed", "edge"] },
+        "value":         { "type": "string" },
+        "nodeId":        { "type": "string" },
+        "imageDuration": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "fixed" } }, "required": ["type"] },
+          "then": { "required": ["value"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "edge" } }, "required": ["type"] },
+          "then": { "required": ["nodeId"] }
+        }
+      ]
+    },
+    "stitcherConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inputOrder":    { "type": "array", "items": { "$ref": "#/definitions/inputOrderItem" } },
+        "inputs":        { "type": "array", "items": { "type": "string" } },
+        "output":        { "type": ["string", "null"] },
+        "imageDuration": { "type": "number", "exclusiveMinimum": 0 },
+        "bgAudio":       { "type": ["string", "null"] },
+        "bgAudioVolume": { "type": "number", "minimum": 0, "maximum": 2 }
+      }
+    },
+    "outputFolderConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" }
+      }
+    },
+    "inputFileConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" }
+      }
+    },
+    "inputFolderConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path":   { "type": "string" },
+        "filter": { "type": "string" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "source", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "id":           { "type": "string", "minLength": 1 },
+        "source":       { "type": "string", "minLength": 1 },
+        "sourceHandle": { "type": "string" },
+        "target":       { "type": "string", "minLength": 1 },
+        "targetHandle": { "type": "string" }
+      }
+    }
+  }
+}

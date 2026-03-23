@@ -76,6 +76,21 @@ video-pipeline run my-workflow.json --overwrite
 video-pipeline validate my-workflow.json
 ```
 
+Runs both JSON Schema validation (structure and types) and semantic checks (duplicate node IDs, valid edge references). Exits with a non-zero code and prints all errors on failure.
+
+You can also enable editor autocomplete and inline validation by adding a `$schema` reference to any workflow file:
+
+```json
+{
+  "$schema": "../../pipeline.schema.json",
+  "version": "1",
+  "name": "my-workflow",
+  ...
+}
+```
+
+The schema file is at `pipeline.schema.json` in the project root.
+
 ## Pipeline Spec Format
 
 ```json
