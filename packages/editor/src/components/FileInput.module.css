@@ -1,3 +1,10 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
 .wrapper {
   display: flex;
   align-items: center;
@@ -49,6 +56,16 @@
 .browseBtn:hover {
   color: #c9d1d9;
   background: #21262d;
+}
+
+.wrapper.error {
+  border-color: #e94560;
+}
+
+.errorMsg {
+  font-size: 10px;
+  color: #e94560;
+  padding: 0 2px;
 }
 
 .hidden {

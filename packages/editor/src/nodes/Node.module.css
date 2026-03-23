@@ -8,6 +8,39 @@
   font-size: 12px;
   color: #c9d1d9;
   transition: border-color 0.15s;
+  position: relative;
+}
+
+.deleteBtn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #21262d;
+  border: 1.5px solid #30363d;
+  color: #6e7681;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  z-index: 10;
+}
+
+.node:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  background: #e94560;
+  border-color: #e94560;
+  color: #fff;
 }
 
 .node.selected {
@@ -132,6 +165,12 @@
 
 .inputRow {
   display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.inputRowMain {
+  display: flex;
   gap: 4px;
   align-items: center;
 }
@@ -241,6 +280,60 @@
 
 .stepBtn:hover {
   background: #30363d;
+  color: #c9d1d9;
+}
+
+.pencilBtn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #6e7681;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+  transition: color 0.1s, border-color 0.1s;
+  line-height: 1.2;
+}
+
+.pencilBtn:hover {
+  color: #c9d1d9;
+  border-color: #30363d;
+}
+
+.pencilBtn.pencilActive {
+  color: #388bfd;
+  border-color: #388bfd;
+}
+
+.durationOverrideRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 22px;
+}
+
+.durationOverrideLabel {
+  font-size: 10px;
+  color: #6e7681;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.resetBtn {
+  background: none;
+  border: 1px solid #30363d;
+  border-radius: 3px;
+  color: #6e7681;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+  transition: color 0.1s;
+  line-height: 1.4;
+}
+
+.resetBtn:hover {
   color: #c9d1d9;
 }
 

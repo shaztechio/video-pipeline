@@ -122,6 +122,31 @@ export const useStore = create((set, get) => ({
     set((s) => ({ nodes: [...s.nodes, node], isDirty: true }))
   },
 
+  deleteNode(nodeId) {
+    set((s) => {
+      const removedEdges = s.edges.filter((e) => e.source === nodeId || e.target === nodeId)
+      const removedEdgeSourceIds = new Set(removedEdges.filter((e) => e.target !== nodeId).map((e) => e.source))
+
+      const nodes = s.nodes
+        .filter((n) => n.id !== nodeId)
+        .map((n) => {
+          if (n.type !== 'video-stitcher' || !n.data.config.inputOrder) return n
+          // Remove edge items pointing to the deleted node
+          const inputOrder = n.data.config.inputOrder.filter(
+            (item) => !(item.type === 'edge' && (item.nodeId === nodeId || removedEdgeSourceIds.has(item.nodeId)))
+          )
+          if (inputOrder.length === n.data.config.inputOrder.length) return n
+          return { ...n, data: { ...n.data, config: { ...n.data.config, inputOrder } } }
+        })
+
+      return {
+        nodes,
+        edges: s.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
+        isDirty: true
+      }
+    })
+  },
+
   async saveNow() {
     const { nodes, edges, specMeta } = get()
     set({ saveStatus: 'saving' })

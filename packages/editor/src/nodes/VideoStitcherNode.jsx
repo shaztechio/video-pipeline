@@ -4,16 +4,25 @@ import { useStore } from '../store.js'
 import styles from './Node.module.css'
 import FileInput from '../components/FileInput.jsx'
 
+const IMAGE_EXTS = /\.(png|jpe?g|gif|webp|bmp|tiff?|avif|svg)$/i
+
+function isImage(filePath) {
+  return filePath ? IMAGE_EXTS.test(filePath) : false
+}
+
 export default function VideoStitcherNode({ id, data, selected }) {
   const { config, label } = data
   const updateConfig = useStore((s) => s.updateNodeConfig)
   const updateLabel = useStore((s) => s.updateNodeLabel)
+  const deleteNode = useStore((s) => s.deleteNode)
   const allNodes = useStore((s) => s.nodes)
 
   const listRef = useRef(null)
   const activeRef = useRef({ from: null, over: null })
   const [dragVisual, setDragVisual] = useState({ from: null, over: null })
   const [durationText, setDurationText] = useState(String(config.imageDuration ?? 1))
+  const [editingDurationIdx, setEditingDurationIdx] = useState(null)
+  const [overrideDurationText, setOverrideDurationText] = useState('')
 
   // Migrate from legacy config.inputs if inputOrder not yet present
   const inputOrder = config.inputOrder ??
@@ -40,11 +49,43 @@ export default function VideoStitcherNode({ id, data, selected }) {
   }
 
   function removeItem(index) {
+    if (editingDurationIdx === index) setEditingDurationIdx(null)
     syncOrder(inputOrder.filter((_, i) => i !== index))
   }
 
   function updateFixedValue(index, value) {
     syncOrder(inputOrder.map((item, i) => (i === index ? { ...item, value } : item)))
+  }
+
+  function setItemDuration(index, duration) {
+    syncOrder(inputOrder.map((item, i) => (i === index ? { ...item, imageDuration: duration } : item)))
+  }
+
+  function clearItemDuration(index) {
+    syncOrder(inputOrder.map((item, i) => {
+      if (i !== index) return item
+      const { imageDuration: _, ...rest } = item
+      return rest
+    }))
+  }
+
+  function toggleDurationEditor(index, item) {
+    if (editingDurationIdx === index) {
+      setEditingDurationIdx(null)
+    } else {
+      setEditingDurationIdx(index)
+      setOverrideDurationText(String(item.imageDuration ?? config.imageDuration ?? 1))
+    }
+  }
+
+  function commitOverrideDuration(index) {
+    const val = parseFloat(overrideDurationText)
+    if (!isNaN(val) && val > 0) {
+      setItemDuration(index, val)
+      setOverrideDurationText(String(val))
+    } else {
+      setOverrideDurationText(String(inputOrder[index]?.imageDuration ?? config.imageDuration ?? 1))
+    }
   }
 
   function startDrag(e, index) {
@@ -92,6 +133,7 @@ export default function VideoStitcherNode({ id, data, selected }) {
 
   return (
     <div className={`${styles.node} ${styles.stitcher} ${selected ? styles.selected : ''}`}>
+      <button className={styles.deleteBtn} onPointerDown={(e) => e.stopPropagation()} onClick={() => deleteNode(id)}>×</button>
       <Handle type="target" position={Position.Left} id="inputs" className={styles.handle} />
       <Handle type="source" position={Position.Right} id="video-out" className={styles.handle} />
 
@@ -135,28 +177,87 @@ export default function VideoStitcherNode({ id, data, selected }) {
                 dragVisual.over === inputOrder.length && i === inputOrder.length - 1 && dragVisual.from !== null ? styles.dropAfter : ''
               ].join(' ')}
             >
-              <span
-                className={styles.dragHandle}
-                title="Drag to reorder"
-                onPointerDown={(e) => startDrag(e, i)}
-              >
-                ⠿
-              </span>
-              {item.type === 'fixed' ? (
-                <>
-                  <FileInput
-                    showBasename
-                    placeholder="/path/to/video.mp4"
-                    value={item.value}
-                    accept="video/*,image/*"
-                    onChange={(v) => updateFixedValue(i, v)}
-                  />
-                  <button className={styles.removeBtn} onClick={() => removeItem(i)}>✕</button>
-                </>
-              ) : (
-                <div className={styles.edgeItem}>
-                  <span className={styles.edgeBadge}>edge</span>
-                  {allNodes.find((n) => n.id === item.nodeId)?.data.label ?? item.nodeId}
+              <div className={styles.inputRowMain}>
+                <span
+                  className={styles.dragHandle}
+                  title="Drag to reorder"
+                  onPointerDown={(e) => startDrag(e, i)}
+                >
+                  ⠿
+                </span>
+                {item.type === 'fixed' ? (
+                  <>
+                    <FileInput
+                      showBasename
+                      placeholder="/path/to/video.mp4"
+                      value={item.value}
+                      accept="video/*,image/*"
+                      onChange={(v) => updateFixedValue(i, v)}
+                    />
+                    {isImage(item.value) && (
+                      <button
+                        className={`${styles.pencilBtn} ${editingDurationIdx === i || item.imageDuration != null ? styles.pencilActive : ''}`}
+                        title={item.imageDuration != null ? `Override: ${item.imageDuration}s` : 'Set image duration override'}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => toggleDurationEditor(i, item)}
+                      >
+                        ✎
+                      </button>
+                    )}
+                    <button className={styles.removeBtn} onClick={() => removeItem(i)}>✕</button>
+                  </>
+                ) : (
+                  <div className={styles.edgeItem}>
+                    <span className={styles.edgeBadge}>edge</span>
+                    {allNodes.find((n) => n.id === item.nodeId)?.data.label ?? item.nodeId}
+                  </div>
+                )}
+              </div>
+
+              {editingDurationIdx === i && item.type === 'fixed' && isImage(item.value) && (
+                <div className={styles.durationOverrideRow}>
+                  <span className={styles.durationOverrideLabel}>Duration (s)</span>
+                  <div className={styles.stepperRow}>
+                    <input
+                      className={styles.input}
+                      type="text"
+                      inputMode="decimal"
+                      value={overrideDurationText}
+                      onChange={(e) => setOverrideDurationText(e.target.value)}
+                      onBlur={() => commitOverrideDuration(i)}
+                    />
+                    <div className={styles.stepperBtns}>
+                      <button
+                        className={styles.stepBtn}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => {
+                          const cur = inputOrder[i]?.imageDuration ?? config.imageDuration ?? 1
+                          const next = Math.round((cur + 0.5) * 10) / 10
+                          setItemDuration(i, next)
+                          setOverrideDurationText(String(next))
+                        }}
+                      >▲</button>
+                      <button
+                        className={styles.stepBtn}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => {
+                          const cur = inputOrder[i]?.imageDuration ?? config.imageDuration ?? 1
+                          const next = Math.max(0.5, Math.round((cur - 0.5) * 10) / 10)
+                          setItemDuration(i, next)
+                          setOverrideDurationText(String(next))
+                        }}
+                      >▼</button>
+                    </div>
+                    <button
+                      className={styles.resetBtn}
+                      title="Reset to global duration"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => {
+                        clearItemDuration(i)
+                        setOverrideDurationText(String(config.imageDuration ?? 1))
+                      }}
+                    >↺</button>
+                  </div>
                 </div>
               )}
             </div>

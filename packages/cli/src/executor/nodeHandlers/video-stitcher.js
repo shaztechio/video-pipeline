@@ -35,7 +35,7 @@ function buildRuns(config, incomingEdges, context, nodeId) {
       // No edge connections — single run with all fixed inputs
       const inputs = config.inputOrder
         .filter((i) => i.type === 'fixed' && i.value)
-        .map((i) => i.value)
+        .map((i) => i.imageDuration != null ? `${i.value}:${i.imageDuration}` : i.value)
       return [{ inputs, name: 'output.mp4' }]
     }
 
@@ -53,7 +53,7 @@ function buildRuns(config, incomingEdges, context, nodeId) {
       const inputs = []
       for (const item of config.inputOrder) {
         if (item.type === 'fixed') {
-          if (item.value) inputs.push(item.value)
+          if (item.value) inputs.push(item.imageDuration != null ? `${item.value}:${item.imageDuration}` : item.value)
         } else if (item.type === 'edge') {
           const files = edgeOutputs.get(item.nodeId) ?? []
           // Use file i; clamp to last available if this edge has fewer files

@@ -2,18 +2,15 @@ import { useState } from 'react'
 import styles from './FileInput.module.css'
 
 async function browseFile(folder = false) {
-  try {
-    const res = await fetch(folder ? '/api/browse-folder' : '/api/browse')
-    const data = await res.json()
-    return data.path ?? null
-  } catch {
-    return null
-  }
+  const res = await fetch(folder ? '/api/browse-folder' : '/api/browse')
+  const data = await res.json()
+  return data.path ?? null
 }
 
 export default function FileInput({ value, onChange, placeholder, folder = false, showBasename = false }) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
+  const [browseError, setBrowseError] = useState(null)
 
   const displayValue = showBasename && value && !isFocused
     ? (value.replace(/[/\\]+$/, '').split(/[/\\]/).pop() || value)
@@ -38,35 +35,43 @@ export default function FileInput({ value, onChange, placeholder, folder = false
   }
 
   async function handleBrowse() {
-    const filePath = await browseFile(folder)
-    if (filePath) onChange(filePath)
+    setBrowseError(null)
+    try {
+      const filePath = await browseFile(folder)
+      if (filePath) onChange(filePath)
+    } catch {
+      setBrowseError('Server unavailable')
+    }
   }
 
   return (
-    <div
-      className={`${styles.wrapper} ${isDragOver ? styles.dragOver : ''}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <input
-        className={styles.textInput}
-        type="text"
-        placeholder={isDragOver ? 'Drop file here…' : placeholder}
-        value={displayValue}
-        title={value || undefined}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      <button
-        className={styles.browseBtn}
-        type="button"
-        title="Browse for file"
-        onClick={handleBrowse}
+    <div className={styles.container}>
+      <div
+        className={`${styles.wrapper} ${isDragOver ? styles.dragOver : ''} ${browseError ? styles.error : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
-        &#128193;
-      </button>
+        <input
+          className={styles.textInput}
+          type="text"
+          placeholder={isDragOver ? 'Drop file here…' : placeholder}
+          value={displayValue}
+          title={value || undefined}
+          onFocus={() => { setIsFocused(true); setBrowseError(null) }}
+          onBlur={() => setIsFocused(false)}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <button
+          className={styles.browseBtn}
+          type="button"
+          title="Browse for file"
+          onClick={handleBrowse}
+        >
+          &#128193;
+        </button>
+      </div>
+      {browseError && <div className={styles.errorMsg}>{browseError}</div>}
     </div>
   )
 }

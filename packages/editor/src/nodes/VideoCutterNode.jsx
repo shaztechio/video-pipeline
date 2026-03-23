@@ -13,6 +13,7 @@ export default function VideoCutterNode({ id, data, selected }) {
   const { config, label } = data
   const updateConfig = useStore((s) => s.updateNodeConfig)
   const updateLabel = useStore((s) => s.updateNodeLabel)
+  const deleteNode = useStore((s) => s.deleteNode)
 
   const activeCutMode = config.segments != null
     ? 'segments'
@@ -32,6 +33,7 @@ export default function VideoCutterNode({ id, data, selected }) {
 
   return (
     <div className={`${styles.node} ${styles.cutter} ${selected ? styles.selected : ''}`}>
+      <button className={styles.deleteBtn} onPointerDown={(e) => e.stopPropagation()} onClick={() => deleteNode(id)}>×</button>
       <Handle type="source" position={Position.Right} id="output" className={styles.handle} />
 
       <div className={styles.header}>
