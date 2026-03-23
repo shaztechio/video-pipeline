@@ -27,5 +27,12 @@
     "ora": "^8.0.1",
     "p-queue": "^8.1.0",
     "ws": "^8.17.0"
+  },
+  "scripts": {
+    "test": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.1",
+    "vitest": "^4.1.1"
   }
 }
