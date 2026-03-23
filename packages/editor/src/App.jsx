@@ -14,12 +14,16 @@ import Toolbar from './components/Toolbar.jsx'
 import VideoCutterNode from './nodes/VideoCutterNode.jsx'
 import VideoStitcherNode from './nodes/VideoStitcherNode.jsx'
 import OutputFolderNode from './nodes/OutputFolderNode.jsx'
+import InputFileNode from './nodes/InputFileNode.jsx'
+import InputFolderNode from './nodes/InputFolderNode.jsx'
 import './App.css'
 
 const NODE_TYPES = {
   'video-cutter': VideoCutterNode,
   'video-stitcher': VideoStitcherNode,
-  'output-folder': OutputFolderNode
+  'output-folder': OutputFolderNode,
+  'input-file': InputFileNode,
+  'input-folder': InputFolderNode
 }
 
 export default function App() {
@@ -85,7 +89,13 @@ export default function App() {
           <Controls position="bottom-right" />
           <MiniMap
             position="bottom-left"
-            nodeColor={(n) => n.type === 'video-cutter' ? '#e94560' : n.type === 'output-folder' ? '#2ea043' : '#533483'}
+            nodeColor={(n) =>
+              n.type === 'video-cutter' ? '#e94560'
+              : n.type === 'output-folder' ? '#2ea043'
+              : n.type === 'input-file' ? '#388bfd'
+              : n.type === 'input-folder' ? '#d29922'
+              : '#533483'
+            }
             maskColor="rgba(13,17,23,0.7)"
             style={{ background: '#0d1117', border: '1px solid #21262d' }}
           />

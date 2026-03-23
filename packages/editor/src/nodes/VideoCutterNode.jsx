@@ -1,7 +1,6 @@
 import { Handle, Position } from '@xyflow/react'
 import { useStore } from '../store.js'
 import styles from './Node.module.css'
-import FileInput from '../components/FileInput.jsx'
 
 const CUTTING_MODES = [
   { key: 'segments', label: 'Equal segments', placeholder: 'e.g. 3' },
@@ -34,6 +33,7 @@ export default function VideoCutterNode({ id, data, selected }) {
   return (
     <div className={`${styles.node} ${styles.cutter} ${selected ? styles.selected : ''}`}>
       <button className={styles.deleteBtn} onPointerDown={(e) => e.stopPropagation()} onClick={() => deleteNode(id)}>×</button>
+      <Handle type="target" position={Position.Left} id="input" className={styles.handle} />
       <Handle type="source" position={Position.Right} id="output" className={styles.handle} />
 
       <div className={styles.header}>
@@ -46,15 +46,6 @@ export default function VideoCutterNode({ id, data, selected }) {
       </div>
 
       <div className={styles.body}>
-        <label className={styles.fieldLabel}>Input file</label>
-        <FileInput
-          showBasename
-          placeholder="/path/to/video.mp4"
-          value={config.input ?? ''}
-          accept="video/*,image/*"
-          onChange={(val) => updateConfig(id, { input: val })}
-        />
-
         <label className={styles.fieldLabel}>Cut method</label>
         <div className={styles.radioGroup}>
           {CUTTING_MODES.map(({ key, label: modeLabel }) => (

@@ -46,6 +46,18 @@ export default function Toolbar() {
         <span className={styles.pipelineName}>{specMeta.name}</span>
         <div className={styles.divider} />
         <button
+          className={`${styles.addBtn} ${styles.inputFile}`}
+          onClick={() => addNode('input-file')}
+        >
+          📄 Add Input File
+        </button>
+        <button
+          className={`${styles.addBtn} ${styles.inputFolder}`}
+          onClick={() => addNode('input-folder')}
+        >
+          📂 Add Input Folder
+        </button>
+        <button
           className={`${styles.addBtn} ${styles.cutter}`}
           onClick={() => addNode('video-cutter')}
         >

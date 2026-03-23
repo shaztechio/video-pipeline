@@ -51,6 +51,8 @@
 .cutter { border-top: 3px solid #e94560; }
 .stitcher { border-top: 3px solid #533483; }
 .outputFolder { border-top: 3px solid #2ea043; }
+.inputFile { border-top: 3px solid #388bfd; }
+.inputFolder { border-top: 3px solid #d29922; }
 
 .header {
   display: flex;

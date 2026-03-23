@@ -6,11 +6,15 @@ import PQueue from 'p-queue'
 import { topoSort } from './topoSort.js'
 import { handleVideoCutter } from './nodeHandlers/video-cutter.js'
 import { handleVideoStitcher } from './nodeHandlers/video-stitcher.js'
+import { handleInputFile } from './nodeHandlers/input-file.js'
+import { handleInputFolder } from './nodeHandlers/input-folder.js'
 
 const HANDLERS = {
   'video-cutter': handleVideoCutter,
   'video-stitcher': handleVideoStitcher,
-  'output-folder': async () => {} // resolved during cutter execution
+  'output-folder': async () => {}, // resolved during cutter/stitcher execution
+  'input-file': handleInputFile,
+  'input-folder': handleInputFolder
 }
 
 /**
@@ -87,7 +91,15 @@ export async function executePipeline(spec, opts = {}) {
             .map((e) => nodeMap.get(e.target))
             .filter((n) => n?.type === 'output-folder' && n.config?.path)
             .map((n) => n.config.path)
-          await handler(node, context, tempRoot, { dryRun, overwrite, outputFolderPaths })
+
+          // Collect input files from connected input-file / input-folder nodes
+          const inputFiles = spec.edges
+            .filter((e) => e.target === nodeId)
+            .map((e) => nodeMap.get(e.source))
+            .filter((n) => n?.type === 'input-file' || n?.type === 'input-folder')
+            .flatMap((n) => context.get(n.id)?.outputs ?? [])
+
+          await handler(node, context, tempRoot, { dryRun, overwrite, outputFolderPaths, inputFiles })
         } else {
           await handler(node, context, tempRoot, { dryRun, overwrite })
         }

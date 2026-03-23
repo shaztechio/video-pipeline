@@ -8,11 +8,15 @@ Create pipelines by connecting nodes on a visual canvas. Each node is an instanc
 
 **Node types:**
 
-- **Video Cutter** — cuts a video into N segments (equal count, fixed duration, or scene detection). Segments are written to a `cutter-output/` folder next to the input file by default, or to a connected Output Folder node.
-- **Video Stitcher** — for each cutter segment, stitches fixed inputs + that segment into one output file. Outputs go to a `stitch-output/` folder next to the cutter's input file by default, or to a connected Output Folder node.
-- **Output Folder** — specifies an explicit output directory. Connect one or more Output Folder nodes to a Cutter or Stitcher to override the default output location. When multiple Output Folder nodes are connected, segments are written to the first and copied to the rest.
+- **Input File** — provides a single file path. Connect to a Cutter node as its input source.
+- **Input Folder** — scans a folder and provides all matching file paths (with optional glob filter). Connect to a Cutter node to batch-process every file in the folder.
+- **Video Cutter** — cuts a video into N segments (equal count, fixed duration, or scene detection). Input comes from a connected Input File or Input Folder node. Segments are written to a `cutter-output/` folder next to the input file by default, or to a connected Output Folder node.
+- **Video Stitcher** — for each cutter segment, stitches fixed inputs + that segment into one output file. Outputs go to a `stitch-output/` folder next to the cutter's input file by default, or to a connected Output Folder node. When an Input Folder feeds multiple files through the cutter, stitcher outputs are organised into per-source subfolders (e.g. `stitch-output/movie1/seg_01.mp4`).
+- **Output Folder** — specifies an explicit output directory. Connect one or more Output Folder nodes to a Cutter or Stitcher to override the default output location. When multiple Output Folder nodes are connected, outputs are written to the first and copied to the rest.
 
 **Data flow:** Each segment produced by a cutter node generates a separate output from the connected stitcher. For example, a cutter producing 3 segments with a stitcher configured as `[intro, EDGE(cutter), credits]` produces 3 output files — one per segment — each wrapped with the fixed inputs.
+
+**Batch mode:** When an Input Folder node is connected to a Cutter, every file in the folder is cut independently. All resulting segments flow into the downstream Stitcher, which organises outputs into per-source subfolders automatically.
 
 ## Installation
 
@@ -39,11 +43,12 @@ video-pipeline edit my-workflow.json
 ```
 
 The editor lets you:
-- Drag **Cutter**, **Stitcher**, and **Output Folder** nodes onto the canvas
-- Connect node outputs to inputs by dragging between handles
+- Drag **Input File**, **Input Folder**, **Cutter**, **Stitcher**, and **Output Folder** nodes onto the canvas
+- Connect Input File or Input Folder to a Cutter's left handle to supply its input
 - Connect a Cutter or Stitcher output handle to one or more Output Folder nodes
 - Configure each node's parameters directly on the node
 - Use the native OS file/folder picker (📁) on any file field
+- Set a glob filter on Input Folder nodes (e.g. `*.mp4`; blank = all files)
 - Drag inputs to reorder them within a Stitcher node
 - Set per-image duration overrides (✎ pencil icon on image inputs)
 - Delete nodes with the **×** button that appears on hover
@@ -60,7 +65,7 @@ video-pipeline run my-workflow.json --keep-temp
 # Dry run — print execution plan without running
 video-pipeline run my-workflow.json --dry-run
 
-# Overwrite existing output files (clears the output directory before running)
+# Overwrite existing output files (clears the cutter output directory before running)
 video-pipeline run my-workflow.json --overwrite
 ```
 
@@ -78,12 +83,18 @@ video-pipeline validate my-workflow.json
   "name": "my-workflow",
   "nodes": [
     {
+      "id": "in-1",
+      "type": "input-file",
+      "label": "Source video",
+      "position": { "x": 0, "y": 200 },
+      "config": { "path": "/path/to/source.mp4" }
+    },
+    {
       "id": "cutter-1",
       "type": "video-cutter",
       "label": "Cut into 3",
-      "position": { "x": 100, "y": 200 },
+      "position": { "x": 300, "y": 200 },
       "config": {
-        "input": "/path/to/source.mp4",
         "segments": 3,
         "duration": null,
         "sceneDetect": null,
@@ -96,7 +107,7 @@ video-pipeline validate my-workflow.json
       "id": "stitcher-1",
       "type": "video-stitcher",
       "label": "Stitch with intro and credits",
-      "position": { "x": 500, "y": 200 },
+      "position": { "x": 650, "y": 200 },
       "config": {
         "inputOrder": [
           { "type": "fixed", "value": "/path/to/intro.mp4" },
@@ -112,35 +123,37 @@ video-pipeline validate my-workflow.json
       "id": "out-1",
       "type": "output-folder",
       "label": "Final Output",
-      "position": { "x": 900, "y": 200 },
-      "config": {
-        "path": "/path/to/output/folder"
-      }
+      "position": { "x": 1000, "y": 200 },
+      "config": { "path": "/path/to/output/folder" }
     }
   ],
   "edges": [
-    {
-      "id": "edge-1",
-      "source": "cutter-1",
-      "sourceHandle": "output",
-      "target": "stitcher-1",
-      "targetHandle": "inputs"
-    },
-    {
-      "id": "edge-2",
-      "source": "stitcher-1",
-      "sourceHandle": "video-out",
-      "target": "out-1",
-      "targetHandle": "input"
-    }
+    { "id": "e1", "source": "in-1",     "sourceHandle": "output",    "target": "cutter-1",  "targetHandle": "input" },
+    { "id": "e2", "source": "cutter-1", "sourceHandle": "output",    "target": "stitcher-1","targetHandle": "inputs" },
+    { "id": "e3", "source": "stitcher-1","sourceHandle": "video-out", "target": "out-1",     "targetHandle": "input" }
   ]
 }
 ```
 
 In this example the pipeline:
-1. Cuts `source.mp4` into 3 equal segments
-2. For each segment, stitches `intro.mp4` + segment + `credits.png` (at 5s) → 3 output files
-3. Writes the stitched files to `/path/to/output/folder/`
+1. Takes `source.mp4` from the Input File node
+2. Cuts it into 3 equal segments
+3. For each segment, stitches `intro.mp4` + segment + `credits.png` (at 5s) → 3 output files
+4. Writes the stitched files to `/path/to/output/folder/`
+
+### Batch example (Input Folder)
+
+Replace `input-file` with `input-folder` and connect it the same way:
+
+```json
+{
+  "id": "in-1",
+  "type": "input-folder",
+  "config": { "path": "/videos/season2", "filter": "*.mp4" }
+}
+```
+
+Every `.mp4` in the folder is cut and stitched independently. Stitcher outputs are written into per-source subfolders: `stitch-output/episode01/seg_01.mp4`, `stitch-output/episode02/seg_01.mp4`, etc.
 
 ### Output folder defaults
 
@@ -151,7 +164,7 @@ In this example the pipeline:
 
 Connect an **Output Folder** node to override. Multiple Output Folder nodes can be connected — outputs are written to the first and copied to the rest.
 
-### `inputOrder` items
+### `inputOrder` items (Stitcher)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -160,7 +173,12 @@ Connect an **Output Folder** node to override. Multiple Output Folder nodes can 
 | `nodeId` | `string` | Source node id (edge items only) |
 | `imageDuration` | `number` | Per-image duration override in seconds (fixed image items only) |
 
-Stitcher output files are named after the corresponding cutter segment (e.g. `seg_01_00-00-00.mp4`).
+### `input-folder` config
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `path` | `string` | Folder to scan |
+| `filter` | `string` | Glob pattern (e.g. `*.mp4`). Blank = all files in the folder |
 
 ## Development
 

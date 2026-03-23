@@ -49,6 +49,12 @@ function buildRuns(config, incomingEdges, context, nodeId) {
     const runs = []
     const pivotFiles = edgeOutputs.get(edgeItems[0].nodeId) ?? []
 
+    // When an InputFolder feeds multiple files into the cutter, each file's segments
+    // land in a named subfolder (e.g. cutter-output/movie1/seg_01.mp4).
+    // Detect this by checking whether the pivot files span more than one parent dir.
+    const pivotParents = new Set(pivotFiles.map((f) => path.dirname(f)))
+    const multiSource = pivotParents.size > 1
+
     for (let i = 0; i < runCount; i++) {
       const inputs = []
       for (const item of config.inputOrder) {
@@ -62,8 +68,12 @@ function buildRuns(config, incomingEdges, context, nodeId) {
         }
       }
       const pivotFile = pivotFiles[i]
+      // Mirror the source subfolder name in the output so files from different input
+      // sources don't collide (e.g. stitch-output/movie1/seg_01.mp4).
       const name = pivotFile
-        ? path.basename(pivotFile)
+        ? multiSource
+          ? path.join(path.basename(path.dirname(pivotFile)), path.basename(pivotFile))
+          : path.basename(pivotFile)
         : `output_${String(i + 1).padStart(3, '0')}.mp4`
       runs.push({ inputs, name })
     }
@@ -121,6 +131,8 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
     }
 
     const outputFile = path.join(outputDir, name)
+
+    if (!opts.dryRun) mkdirSync(path.dirname(outputFile), { recursive: true })
 
     if (!opts.dryRun && !opts.overwrite && existsSync(outputFile)) {
       throw new Error(

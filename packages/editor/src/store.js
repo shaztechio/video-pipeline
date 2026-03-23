@@ -113,13 +113,20 @@ export const useStore = create((set, get) => ({
 
   addNode(type) {
     const id = makeId(type)
-    const defaults = type === 'video-cutter'
-      ? { input: '', segments: 2, duration: null, sceneDetect: null, output: null, verify: false, reEncode: false }
-      : type === 'output-folder'
-      ? { path: '' }
+    const defaults =
+      type === 'video-cutter' ? { segments: 2, duration: null, sceneDetect: null, output: null, verify: false, reEncode: false }
+      : type === 'output-folder' ? { path: '' }
+      : type === 'input-file' ? { path: '' }
+      : type === 'input-folder' ? { path: '', filter: '' }
       : { inputOrder: [], inputs: [], imageDuration: 1, bgAudio: null, bgAudioVolume: 1.0 }
 
-    const labelMap = { 'video-cutter': 'Video Cutter', 'video-stitcher': 'Video Stitcher', 'output-folder': 'Output Folder' }
+    const labelMap = {
+      'video-cutter': 'Video Cutter',
+      'video-stitcher': 'Video Stitcher',
+      'output-folder': 'Output Folder',
+      'input-file': 'Input File',
+      'input-folder': 'Input Folder'
+    }
 
     const node = {
       id,
