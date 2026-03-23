@@ -6,20 +6,6 @@ import { saveSpec } from './api.js'
 
 let nodeCounter = 1
 
-// Given a file path, return its parent directory (no trailing slash)
-function dirOf(filePath) {
-  if (!filePath) return ''
-  return filePath.replace(/[/\\][^/\\]+$/, '')
-}
-
-// If there is exactly one cutter with an input set, return its suggested output dir
-function derivedStitcherOutput(nodes, cutterInput) {
-  const cutters = nodes.filter((n) => n.type === 'video-cutter')
-  if (cutters.length !== 1) return ''
-  const input = cutterInput ?? cutters[0].data.config.input
-  const dir = dirOf(input)
-  return dir ? dir + '/output' : ''
-}
 
 function makeId(prefix) {
   return `${prefix}-${Date.now()}-${nodeCounter++}`
@@ -34,17 +20,7 @@ export const useStore = create((set, get) => ({
   saveStatus: 'idle', // 'idle' | 'saving' | 'saved' | 'error'
 
   loadSpec(spec) {
-    let { nodes, edges } = specToFlow(spec)
-
-    // Auto-fill empty stitcher outputs on load (same rule as addNode/updateNodeConfig)
-    const suggested = derivedStitcherOutput(nodes)
-    if (suggested) {
-      nodes = nodes.map((n) =>
-        n.type === 'video-stitcher' && !n.data.config.output
-          ? { ...n, data: { ...n.data, config: { ...n.data.config, output: suggested } } }
-          : n
-      )
-    }
+    const { nodes, edges } = specToFlow(spec)
 
     set({
       nodes,
@@ -116,27 +92,14 @@ export const useStore = create((set, get) => ({
   },
 
   updateNodeConfig(nodeId, configPatch) {
-    set((s) => {
-      let nodes = s.nodes.map((n) =>
+    set((s) => ({
+      nodes: s.nodes.map((n) =>
         n.id === nodeId
           ? { ...n, data: { ...n.data, config: { ...n.data.config, ...configPatch } } }
           : n
-      )
-
-      // When a cutter's input changes, auto-fill empty stitcher output fields
-      if ('input' in configPatch) {
-        const suggested = derivedStitcherOutput(nodes, configPatch.input)
-        if (suggested) {
-          nodes = nodes.map((n) =>
-            n.type === 'video-stitcher' && !n.data.config.output
-              ? { ...n, data: { ...n.data, config: { ...n.data.config, output: suggested } } }
-              : n
-          )
-        }
-      }
-
-      return { nodes, isDirty: true }
-    })
+      ),
+      isDirty: true
+    }))
   },
 
   updateNodeLabel(nodeId, label) {
@@ -150,17 +113,19 @@ export const useStore = create((set, get) => ({
 
   addNode(type) {
     const id = makeId(type)
-    const { nodes: currentNodes } = get()
-    const stitcherOutput = type === 'video-stitcher' ? derivedStitcherOutput(currentNodes) : ''
     const defaults = type === 'video-cutter'
       ? { input: '', segments: 2, duration: null, sceneDetect: null, output: null, verify: false, reEncode: false }
-      : { inputOrder: [], inputs: [], output: stitcherOutput, imageDuration: 1, bgAudio: null, bgAudioVolume: 1.0 }
+      : type === 'output-folder'
+      ? { path: '' }
+      : { inputOrder: [], inputs: [], imageDuration: 1, bgAudio: null, bgAudioVolume: 1.0 }
+
+    const labelMap = { 'video-cutter': 'Video Cutter', 'video-stitcher': 'Video Stitcher', 'output-folder': 'Output Folder' }
 
     const node = {
       id,
       type,
       position: { x: 200 + Math.random() * 200, y: 150 + Math.random() * 150 },
-      data: { label: type === 'video-cutter' ? 'Video Cutter' : 'Video Stitcher', config: defaults }
+      data: { label: labelMap[type] ?? type, config: defaults }
     }
 
     set((s) => ({ nodes: [...s.nodes, node], isDirty: true }))

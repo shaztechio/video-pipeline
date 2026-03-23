@@ -57,6 +57,12 @@ export default function Toolbar() {
         >
           ⧓ Add Stitcher
         </button>
+        <button
+          className={`${styles.addBtn} ${styles.outputFolder}`}
+          onClick={() => addNode('output-folder')}
+        >
+          📁 Add Output Folder
+        </button>
       </div>
 
       <div className={styles.right}>

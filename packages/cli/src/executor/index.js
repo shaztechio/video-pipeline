@@ -9,7 +9,8 @@ import { handleVideoStitcher } from './nodeHandlers/video-stitcher.js'
 
 const HANDLERS = {
   'video-cutter': handleVideoCutter,
-  'video-stitcher': handleVideoStitcher
+  'video-stitcher': handleVideoStitcher,
+  'output-folder': async () => {} // resolved during cutter execution
 }
 
 /**
@@ -62,16 +63,31 @@ export async function executePipeline(spec, opts = {}) {
         const incomingEdges = spec.edges.filter((e) => e.target === nodeId)
 
         if (node.type === 'video-stitcher') {
-          // If no output configured, derive default from the single cutter's input dir
+          // Collect output-folder paths from connected output-folder nodes
+          const outputFolderPaths = spec.edges
+            .filter((e) => e.source === nodeId)
+            .map((e) => nodeMap.get(e.target))
+            .filter((n) => n?.type === 'output-folder' && n.config?.path)
+            .map((n) => n.config.path)
+
+          // If no output configured (and no output-folder node), derive default from the single cutter's input dir
           let effectiveNode = node
-          if (!node.config.output) {
+          if (!node.config.output && outputFolderPaths.length === 0) {
             const cutters = spec.nodes.filter((n) => n.type === 'video-cutter')
             if (cutters.length === 1 && cutters[0].config.input) {
               const inputDir = path.dirname(cutters[0].config.input)
-              effectiveNode = { ...node, config: { ...node.config, output: path.join(inputDir, 'output') } }
+              effectiveNode = { ...node, config: { ...node.config, output: path.join(inputDir, 'stitch-output') } }
             }
           }
-          await handler(effectiveNode, context, tempRoot, incomingEdges, { dryRun, overwrite })
+          await handler(effectiveNode, context, tempRoot, incomingEdges, { dryRun, overwrite, outputFolderPaths })
+        } else if (node.type === 'video-cutter') {
+          // Collect output-folder paths from connected output-folder nodes
+          const outputFolderPaths = spec.edges
+            .filter((e) => e.source === nodeId)
+            .map((e) => nodeMap.get(e.target))
+            .filter((n) => n?.type === 'output-folder' && n.config?.path)
+            .map((n) => n.config.path)
+          await handler(node, context, tempRoot, { dryRun, overwrite, outputFolderPaths })
         } else {
           await handler(node, context, tempRoot, { dryRun, overwrite })
         }

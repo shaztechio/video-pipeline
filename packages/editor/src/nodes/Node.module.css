@@ -50,6 +50,7 @@
 
 .cutter { border-top: 3px solid #e94560; }
 .stitcher { border-top: 3px solid #533483; }
+.outputFolder { border-top: 3px solid #2ea043; }
 
 .header {
   display: flex;

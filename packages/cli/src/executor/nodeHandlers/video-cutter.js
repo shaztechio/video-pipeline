@@ -1,6 +1,6 @@
 import os from 'os'
 import path from 'path'
-import { mkdirSync, readdirSync } from 'fs'
+import { mkdirSync, rmSync, readdirSync, copyFileSync } from 'fs'
 import { glob } from 'glob'
 import { run } from '../runner.js'
 
@@ -28,11 +28,21 @@ export async function handleVideoCutter(node, context, _tempRoot, opts = {}) {
   }
 
   // Output dir for this node's segments.
-  // Preference: explicit config.output → sibling "output" folder of input → temp
-  const outputDir = config.output
+  // Preference: connected output-folder node(s) → explicit config.output → sibling "output" folder of input
+  const outputFolderPaths = (opts.outputFolderPaths ?? []).map(expandPath).filter(Boolean)
+  const outputDir = outputFolderPaths.length > 0
+    ? outputFolderPaths[0]
+    : config.output
     ? expandPath(config.output)
-    : path.join(path.dirname(inputFile), 'output')
-  if (!opts.dryRun) mkdirSync(outputDir, { recursive: true })
+    : path.join(path.dirname(inputFile), 'cutter-output')
+  if (!opts.dryRun) {
+    if (opts.overwrite) {
+      // Wipe and recreate so ffmpeg never encounters existing files
+      // (ffmpeg hangs prompting on its stdin pipe when output files already exist)
+      rmSync(outputDir, { recursive: true, force: true })
+    }
+    mkdirSync(outputDir, { recursive: true })
+  }
 
   const argv = ['-i', inputFile, '-o', outputDir]
 
@@ -76,6 +86,16 @@ export async function handleVideoCutter(node, context, _tempRoot, opts = {}) {
     throw new Error(
       `Node "${node.id}" (video-cutter): produced no output segments\n  ${detail}\n  Input: ${inputFile}`
     )
+  }
+
+  // Copy segments to any additional output-folder paths
+  const additionalDirs = outputFolderPaths.slice(1)
+  for (const dir of additionalDirs) {
+    console.log(`  Copying ${files.length} segment(s) → ${dir}`)
+    mkdirSync(dir, { recursive: true })
+    for (const file of files) {
+      copyFileSync(file, path.join(dir, path.basename(file)))
+    }
   }
 
   context.set(node.id, { outputDir, outputs: files })

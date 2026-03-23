@@ -1,6 +1,6 @@
 import os from 'os'
 import path from 'path'
-import { mkdirSync, existsSync } from 'fs'
+import { mkdirSync, existsSync, copyFileSync } from 'fs'
 import { run } from '../runner.js'
 
 function expandPath(p) {
@@ -99,8 +99,11 @@ function buildRuns(config, incomingEdges, context, nodeId) {
 export async function handleVideoStitcher(node, context, tempRoot, incomingEdges, opts = {}) {
   const { config } = node
 
-  // Determine output directory
-  const outputDir = config.output
+  // Determine output directory: connected output-folder node > config.output > temp
+  const outputFolderPaths = (opts.outputFolderPaths ?? []).map(expandPath).filter(Boolean)
+  const outputDir = outputFolderPaths.length > 0
+    ? outputFolderPaths[0]
+    : config.output
     ? expandPath(config.output)
     : path.join(tempRoot, node.id)
 
@@ -143,6 +146,16 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
     })
 
     outputFiles.push(outputFile)
+  }
+
+  // Copy outputs to any additional output-folder paths
+  const additionalDirs = outputFolderPaths.slice(1)
+  for (const dir of additionalDirs) {
+    console.log(`  Copying ${outputFiles.length} output(s) → ${dir}`)
+    mkdirSync(dir, { recursive: true })
+    for (const file of outputFiles) {
+      copyFileSync(file, path.join(dir, path.basename(file)))
+    }
   }
 
   context.set(node.id, { outputDir, outputs: outputFiles })

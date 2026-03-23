@@ -147,15 +147,6 @@ export default function VideoStitcherNode({ id, data, selected }) {
       </div>
 
       <div className={styles.body}>
-        <label className={styles.fieldLabel}>Output folder</label>
-        <FileInput
-          folder
-          showBasename
-          placeholder="/path/to/output/folder"
-          value={config.output ?? ''}
-          onChange={(val) => updateConfig(id, { output: val })}
-        />
-
         <div className={styles.sectionHeader}>
           <label className={styles.fieldLabel}>Inputs</label>
           <button className={styles.addBtn} onClick={addFixedInput}>+ Add file</button>

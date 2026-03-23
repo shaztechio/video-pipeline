@@ -1,4 +1,4 @@
-const KNOWN_NODE_TYPES = new Set(['video-cutter', 'video-stitcher'])
+const KNOWN_NODE_TYPES = new Set(['video-cutter', 'video-stitcher', 'output-folder'])
 
 /**
  * Validates a pipeline spec object.
