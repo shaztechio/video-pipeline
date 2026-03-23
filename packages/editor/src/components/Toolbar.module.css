@@ -95,6 +95,11 @@
   cursor: default;
 }
 
+.dirty {
+  border-color: #e94560;
+  color: #e94560;
+}
+
 .savedGreen {
   color: #3fb950;
   border-color: rgba(63, 185, 80, 0.4);
@@ -105,11 +110,38 @@
   border-color: rgba(248, 81, 73, 0.4);
 }
 
-.dirtyDot {
+.serverStatus {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #484f58;
+  transition: color 0.3s;
+}
+
+.serverStatus.online  { color: #3fb950; }
+.serverStatus.offline { color: #f85149; }
+
+.serverDot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #e94560;
-  display: inline-block;
+  flex-shrink: 0;
+  background: currentColor;
+  transition: box-shadow 0.3s;
+}
+
+.serverStatus.online  .serverDot { box-shadow: 0 0 5px rgba(63, 185, 80, 0.7); }
+.serverStatus.offline .serverDot { box-shadow: 0 0 5px rgba(248, 81, 73, 0.7); }
+
+.serverLabel {
+  white-space: nowrap;
+}
+
+.saveIcon {
+  width: 13px;
+  height: 13px;
   flex-shrink: 0;
 }
+

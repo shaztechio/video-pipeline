@@ -18,7 +18,7 @@ function expandPath(p) {
  * @param {string} tempRoot - base temp directory for this run
  * @param {object} opts - { dryRun }
  */
-export async function handleVideoCutter(node, context, tempRoot, opts = {}) {
+export async function handleVideoCutter(node, context, _tempRoot, opts = {}) {
   const { config } = node
 
   // Resolve input: either static config or from upstream (future)
@@ -27,8 +27,11 @@ export async function handleVideoCutter(node, context, tempRoot, opts = {}) {
     throw new Error(`Node "${node.id}" (video-cutter): no input file configured`)
   }
 
-  // Output dir for this node's segments
-  const outputDir = path.join(tempRoot, node.id)
+  // Output dir for this node's segments.
+  // Preference: explicit config.output → sibling "output" folder of input → temp
+  const outputDir = config.output
+    ? expandPath(config.output)
+    : path.join(path.dirname(inputFile), 'output')
   if (!opts.dryRun) mkdirSync(outputDir, { recursive: true })
 
   const argv = ['-i', inputFile, '-o', outputDir]

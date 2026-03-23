@@ -7,8 +7,9 @@ A visual node-based pipeline tool for composing video processing workflows using
 Create pipelines by connecting nodes on a visual canvas. Each node is an instance of a CLI tool. The pipeline is stored as a JSON spec file on disk and can be executed directly from the command line.
 
 **Node types:**
-- **Video Cutter** — cuts a video into N segments (equal count, fixed duration, or scene detection)
-- **Video Stitcher** — stitches multiple videos/images into one output per segment
+
+- **Video Cutter** — cuts a video into N segments (equal count, fixed duration, or scene detection). Segments are written to a configurable output folder; defaults to an `output/` folder next to the input file.
+- **Video Stitcher** — for each cutter segment, stitches fixed inputs + that segment into one output file. The output folder defaults to an `output/` folder next to the cutter's input file when there is a single cutter in the workflow.
 
 **Data flow:** Each segment produced by a cutter node generates a separate output from the connected stitcher. For example, a cutter producing 3 segments with a stitcher configured as `[intro, EDGE(cutter), credits]` produces 3 output files — one per segment — each wrapped with the fixed inputs.
 
@@ -88,6 +89,7 @@ video-pipeline validate my-workflow.json
         "verify": false,
         "reEncode": false
       }
+      // output null → defaults to /path/to/output/ (sibling of input)
     },
     {
       "id": "stitcher-1",
@@ -132,7 +134,7 @@ In this example the pipeline:
 | `nodeId` | `string` | Source node id (edge items only) |
 | `imageDuration` | `number` | Per-image duration override in seconds (fixed image items only) |
 
-The `output` field on a stitcher node is a **folder path**. Output files are named after the corresponding cutter segment (e.g. `segment_001.mp4`).
+The `output` field on both cutter and stitcher nodes is a **folder path**. When omitted, both default to an `output/` folder in the same directory as the cutter's input file. Stitcher output files are named after the corresponding cutter segment (e.g. `seg_01_00-00-00.mp4`).
 
 ## Development
 

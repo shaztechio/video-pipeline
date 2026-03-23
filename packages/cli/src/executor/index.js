@@ -62,7 +62,16 @@ export async function executePipeline(spec, opts = {}) {
         const incomingEdges = spec.edges.filter((e) => e.target === nodeId)
 
         if (node.type === 'video-stitcher') {
-          await handler(node, context, tempRoot, incomingEdges, { dryRun, overwrite })
+          // If no output configured, derive default from the single cutter's input dir
+          let effectiveNode = node
+          if (!node.config.output) {
+            const cutters = spec.nodes.filter((n) => n.type === 'video-cutter')
+            if (cutters.length === 1 && cutters[0].config.input) {
+              const inputDir = path.dirname(cutters[0].config.input)
+              effectiveNode = { ...node, config: { ...node.config, output: path.join(inputDir, 'output') } }
+            }
+          }
+          await handler(effectiveNode, context, tempRoot, incomingEdges, { dryRun, overwrite })
         } else {
           await handler(node, context, tempRoot, { dryRun, overwrite })
         }
