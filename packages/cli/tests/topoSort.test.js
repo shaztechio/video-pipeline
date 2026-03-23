@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { topoSort } from '../executor/topoSort.js'
+import { topoSort } from '../src/executor/topoSort.js'
 
 afterEach(() => {
   vi.restoreAllMocks()

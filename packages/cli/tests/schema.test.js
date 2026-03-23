@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateSpec } from '../spec/schema.js'
+import { validateSpec } from '../src/spec/schema.js'
 
 // A minimal valid spec used as a base for most tests
 const validSpec = () => ({

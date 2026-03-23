@@ -15,7 +15,7 @@ vi.mock('chalk', () => ({
 }))
 
 import { glob } from 'glob'
-import { handleInputFolder } from '../executor/nodeHandlers/input-folder.js'
+import { handleInputFolder } from '../src/executor/nodeHandlers/input-folder.js'
 
 function makeNode(id, config) {
   return { id, config }

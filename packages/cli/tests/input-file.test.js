@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import os from 'os'
 import path from 'path'
-import { handleInputFile } from '../executor/nodeHandlers/input-file.js'
+import { handleInputFile } from '../src/executor/nodeHandlers/input-file.js'
 
 function makeNode(id, config) {
   return { id, config }

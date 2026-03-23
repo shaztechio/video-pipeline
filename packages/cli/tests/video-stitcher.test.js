@@ -10,13 +10,13 @@ vi.mock('fs', () => ({
 }))
 
 // Mock the runner module
-vi.mock('../executor/runner.js', () => ({
+vi.mock('../src/executor/runner.js', () => ({
   run: vi.fn(() => Promise.resolve())
 }))
 
 import { mkdirSync, existsSync, copyFileSync } from 'fs'
-import { run } from '../executor/runner.js'
-import { handleVideoStitcher } from '../executor/nodeHandlers/video-stitcher.js'
+import { run } from '../src/executor/runner.js'
+import { handleVideoStitcher } from '../src/executor/nodeHandlers/video-stitcher.js'
 
 // Helper: build a minimal node object
 function makeNode(id, config, label) {
