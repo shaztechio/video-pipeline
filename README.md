@@ -1,5 +1,7 @@
 # video-pipeline
 
+![video-pipeline editor](screenshot.png)
+
 A visual node-based pipeline tool for composing video processing workflows using [`video-cutter`](https://github.com/shaztechio/video-cutter) and [`video-stitcher`](https://github.com/shaztechio/video-stitcher).
 
 ## Overview
