@@ -1,9 +1,9 @@
 # video-pipeline
 
-![video-pipeline editor](screenshot.png)
-
 [![CI](https://github.com/shaztechio/video-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/shaztechio/video-pipeline/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@shaztech/video-pipeline)](https://www.npmjs.com/package/@shaztech/video-pipeline)
+
+![video-pipeline editor](screenshot.png)
 
 A visual node-based pipeline tool for composing video processing workflows using [`video-cutter`](https://github.com/shaztechio/video-cutter) and [`video-stitcher`](https://github.com/shaztechio/video-stitcher).
 
