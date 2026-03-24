@@ -1,5 +1,6 @@
 {
   "name": "video-pipeline",
+  "version": "1.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -10,6 +11,7 @@
     "build": "npm run build -w packages/editor",
     "dev": "npm run dev -w packages/editor",
     "prepare": "npm run build",
-    "test": "npm test -w packages/cli"
+    "test": "npm test -w packages/cli",
+    "version": "npm version $npm_package_version --workspaces --no-git-tag-version && git add packages/*/package.json"
   }
 }
