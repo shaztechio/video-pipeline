@@ -28,6 +28,9 @@
     "p-queue": "^8.1.0",
     "ws": "^8.17.0"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "vitest run --coverage"
   },

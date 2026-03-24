@@ -6,4 +6,4 @@ packages/editor/dist/
 .DS_Store
 output/
 .claude
-workflows
+/workflows/
