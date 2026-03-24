@@ -3,6 +3,7 @@ import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react'
 import { specToFlow } from './utils/specToFlow.js'
 import { flowToSpec } from './utils/flowToSpec.js'
 import { saveSpec } from './api.js'
+import { nodeRegistry } from './nodeRegistry.js'
 
 let nodeCounter = 1
 
@@ -52,14 +53,11 @@ export const useStore = create((set, get) => ({
           .filter(Boolean)
 
         nodes = s.nodes.map((n) => {
-          if (n.type !== 'video-stitcher' || !n.data.config.inputOrder) return n
+          const handler = nodeRegistry[n.type]?.onDisconnect
+          if (!handler) return n
           const affected = removedEdges.filter((e) => e.target === n.id)
           if (affected.length === 0) return n
-          const removedNodeIds = new Set(affected.map((e) => e.source))
-          const inputOrder = n.data.config.inputOrder.filter(
-            (item) => !(item.type === 'edge' && removedNodeIds.has(item.nodeId))
-          )
-          return { ...n, data: { ...n.data, config: { ...n.data.config, inputOrder } } }
+          return { ...n, data: handler(n.data, affected.map((e) => e.source)) }
         })
       }
 
@@ -72,19 +70,10 @@ export const useStore = create((set, get) => ({
       const edge = { ...connection, id: makeId('edge') }
 
       const nodes = s.nodes.map((n) => {
-        if (n.id !== connection.target || n.type !== 'video-stitcher') return n
-        const existing = n.data.config.inputOrder ??
-          (n.data.config.inputs ?? []).map((v) => ({ type: 'fixed', value: v }))
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            config: {
-              ...n.data.config,
-              inputOrder: [...existing, { type: 'edge', nodeId: connection.source }]
-            }
-          }
-        }
+        if (n.id !== connection.target) return n
+        const handler = nodeRegistry[n.type]?.onConnect
+        if (!handler) return n
+        return { ...n, data: handler(n.data, connection) }
       })
 
       return { edges: [...s.edges, edge], nodes, isDirty: true }
@@ -117,26 +106,13 @@ export const useStore = create((set, get) => ({
 
   addNode(type, position) {
     const id = makeId(type)
-    const defaults =
-      type === 'video-cutter' ? { segments: 2, duration: null, sceneDetect: null, output: null, verify: false, reEncode: false }
-      : type === 'output-folder' ? { path: '' }
-      : type === 'input-file' ? { path: '' }
-      : type === 'input-folder' ? { path: '', filter: '' }
-      : { inputOrder: [], inputs: [], imageDuration: 1, bgAudio: null, bgAudioVolume: 1.0 }
-
-    const labelMap = {
-      'video-cutter': 'Video Cutter',
-      'video-stitcher': 'Video Stitcher',
-      'output-folder': 'Output Folder',
-      'input-file': 'Input File',
-      'input-folder': 'Input Folder'
-    }
+    const entry = nodeRegistry[type] ?? {}
 
     const node = {
       id,
       type,
       position: position ?? { x: 200 + Math.random() * 200, y: 150 + Math.random() * 150 },
-      data: { label: labelMap[type] ?? type, config: defaults }
+      data: { label: entry.label ?? type, config: entry.defaults ?? {} }
     }
 
     set((s) => ({ nodes: [...s.nodes, node], isDirty: true }))
@@ -146,18 +122,19 @@ export const useStore = create((set, get) => ({
   deleteNode(nodeId) {
     set((s) => {
       const removedEdges = s.edges.filter((e) => e.source === nodeId || e.target === nodeId)
-      const removedEdgeSourceIds = new Set(removedEdges.filter((e) => e.target !== nodeId).map((e) => e.source))
 
       const nodes = s.nodes
         .filter((n) => n.id !== nodeId)
         .map((n) => {
-          if (n.type !== 'video-stitcher' || !n.data.config.inputOrder) return n
-          // Remove edge items pointing to the deleted node
-          const inputOrder = n.data.config.inputOrder.filter(
-            (item) => !(item.type === 'edge' && (item.nodeId === nodeId || removedEdgeSourceIds.has(item.nodeId)))
-          )
-          if (inputOrder.length === n.data.config.inputOrder.length) return n
-          return { ...n, data: { ...n.data, config: { ...n.data.config, inputOrder } } }
+          const handler = nodeRegistry[n.type]?.onDisconnect
+          if (!handler) return n
+          const disconnectedSources = [...new Set([
+            nodeId,
+            ...removedEdges.filter((e) => e.target === n.id).map((e) => e.source)
+          ])]
+          const updated = handler(n.data, disconnectedSources)
+          if (updated === n.data) return n
+          return { ...n, data: updated }
         })
 
       return {
