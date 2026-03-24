@@ -1,6 +1,6 @@
 {
   "name": "@shaztech/video-pipeline",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Visual node-based video processing pipeline CLI",
   "license": "Apache-2.0",
   "repository": {
