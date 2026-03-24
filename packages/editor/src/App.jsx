@@ -55,6 +55,7 @@ function AppInner() {
   const onConnect = useStore((s) => s.onConnect)
   const storeLoad = useStore((s) => s.loadSpec)
   const saveNow = useStore((s) => s.saveNow)
+  const isDirty = useStore((s) => s.isDirty)
 
   // Load spec on mount
   useEffect(() => {
@@ -72,6 +73,15 @@ function AppInner() {
     })
     return () => ws.close()
   }, [])
+
+  // Warn before closing tab with unsaved changes
+  useEffect(() => {
+    const handler = (e) => {
+      if (isDirty) e.preventDefault()
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
 
   // Cmd/Ctrl+S to save
   const handleKeyDown = useCallback(
