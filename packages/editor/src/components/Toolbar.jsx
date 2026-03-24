@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { useStore } from '../store.js'
+import { flowToSpec } from '../utils/flowToSpec.js'
 import styles from './Toolbar.module.css'
 
 function useServerStatus(intervalMs = 5000) {
@@ -49,7 +50,8 @@ export default function Toolbar() {
   const saveStatus = useStore((s) => s.saveStatus)
   const specMeta = useStore((s) => s.specMeta)
   const updateSpecName = useStore((s) => s.updateSpecName)
-  const setServerOnline = useStore((s) => s.setServerOnline)
+  const nodes = useStore((s) => s.nodes)
+  const edges = useStore((s) => s.edges)
 
   const [editingName, setEditingName] = useState(false)
   const [nameText, setNameText] = useState(specMeta.name)
@@ -68,7 +70,16 @@ export default function Toolbar() {
   const serverStatus = useServerStatus()
   const isOnline = serverStatus === 'online'
 
-  useEffect(() => { setServerOnline(isOnline) }, [isOnline, setServerOnline])
+  function handleDownload() {
+    const spec = flowToSpec(nodes, edges, specMeta)
+    const blob = new Blob([JSON.stringify(spec, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${specMeta.name}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   function handleAddNode(type) {
     // Place the new node at the current viewport center
@@ -146,20 +157,26 @@ export default function Toolbar() {
             {serverStatus === 'online' ? 'Online' : serverStatus === 'offline' ? 'Offline' : 'Checking…'}
           </span>
         </div>
-        <button
-          className={`${styles.saveBtn} ${isDirty && saveStatus === 'idle' ? styles.dirty : ''} ${saveStatus === 'saved' ? styles.savedGreen : ''} ${saveStatus === 'error' ? styles.errorRed : ''}`}
-          onClick={saveNow}
-          disabled={saveStatus === 'saving' || !isOnline}
-        >
-          {isDirty && saveStatus === 'idle' && (
-            <svg className={styles.saveIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
-            </svg>
-          )}
-          {saveLabel}
-        </button>
+        {isOnline ? (
+          <button
+            className={`${styles.saveBtn} ${isDirty && saveStatus === 'idle' ? styles.dirty : ''} ${saveStatus === 'saved' ? styles.savedGreen : ''} ${saveStatus === 'error' ? styles.errorRed : ''}`}
+            onClick={saveNow}
+            disabled={saveStatus === 'saving'}
+          >
+            {isDirty && saveStatus === 'idle' && (
+              <svg className={styles.saveIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+            )}
+            {saveLabel}
+          </button>
+        ) : (
+          <button className={`${styles.saveBtn} ${styles.dirty}`} onClick={handleDownload}>
+            ⬇ Download
+          </button>
+        )}
       </div>
     </div>
   )

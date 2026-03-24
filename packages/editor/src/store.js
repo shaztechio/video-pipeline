@@ -35,9 +35,6 @@ export const useStore = create((set, get) => ({
   isDirty: false,
   lastSaved: null,
   saveStatus: 'idle', // 'idle' | 'saving' | 'saved' | 'error'
-  serverOnline: false,
-
-  setServerOnline(online) { set({ serverOnline: online }) },
 
   loadSpec(spec) {
     const { nodes, edges } = specToFlow(spec)
@@ -165,7 +162,6 @@ export const useStore = create((set, get) => ({
   },
 
   async saveNow() {
-    if (!get().serverOnline) return
     const { nodes, edges, specMeta } = get()
     set({ saveStatus: 'saving' })
     try {
