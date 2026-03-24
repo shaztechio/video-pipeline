@@ -49,6 +49,7 @@ export default function Toolbar() {
   const saveStatus = useStore((s) => s.saveStatus)
   const specMeta = useStore((s) => s.specMeta)
   const updateSpecName = useStore((s) => s.updateSpecName)
+  const setServerOnline = useStore((s) => s.setServerOnline)
 
   const [editingName, setEditingName] = useState(false)
   const [nameText, setNameText] = useState(specMeta.name)
@@ -65,6 +66,9 @@ export default function Toolbar() {
 
   const { screenToFlowPosition } = useReactFlow()
   const serverStatus = useServerStatus()
+  const isOnline = serverStatus === 'online'
+
+  useEffect(() => { setServerOnline(isOnline) }, [isOnline, setServerOnline])
 
   function handleAddNode(type) {
     // Place the new node at the current viewport center
@@ -145,7 +149,7 @@ export default function Toolbar() {
         <button
           className={`${styles.saveBtn} ${isDirty && saveStatus === 'idle' ? styles.dirty : ''} ${saveStatus === 'saved' ? styles.savedGreen : ''} ${saveStatus === 'error' ? styles.errorRed : ''}`}
           onClick={saveNow}
-          disabled={saveStatus === 'saving'}
+          disabled={saveStatus === 'saving' || !isOnline}
         >
           {isDirty && saveStatus === 'idle' && (
             <svg className={styles.saveIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
