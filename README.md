@@ -203,6 +203,7 @@ git clone https://github.com/shaztechio/video-pipeline
 cd video-pipeline
 npm install          # installs all workspaces and builds the editor
 npm run dev          # start Vite dev server for the editor UI
+npm test             # run CLI unit tests (Vitest, 100% coverage)
 ```
 
 To run the CLI locally without installing:
