@@ -19,8 +19,7 @@
   "files": [
     "bin.js",
     "src/",
-    "dist/",
-    "screenshot.png"
+    "dist/"
   ],
   "engines": {
     "node": ">=20.0.0"
@@ -43,8 +42,8 @@
     "access": "public"
   },
   "scripts": {
-    "prepack": "cp ../../README.md ./README.md && cp ../../screenshot.png ./screenshot.png",
-    "postpack": "rm -f ./README.md ./screenshot.png",
+    "prepack": "cp ../../README.md ./README.md && sed -i.bak 's|(screenshot.png)|(https://raw.githubusercontent.com/shaztechio/video-pipeline/main/screenshot.png)|g' README.md && rm -f README.md.bak",
+    "postpack": "rm -f ./README.md",
     "test": "vitest run --coverage"
   },
   "devDependencies": {
