@@ -25,6 +25,7 @@ export default defineConfig({
       include: [
         'src/spec/schema.js',
         'src/executor/topoSort.js',
+        'src/executor/nodeHandlers/imageAnnotate.js',
         'src/executor/nodeHandlers/video-stitcher.js',
         'src/executor/nodeHandlers/input-folder.js',
         'src/executor/nodeHandlers/input-file.js'

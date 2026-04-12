@@ -88,6 +88,20 @@
         "reEncode":    { "type": "boolean" }
       }
     },
+    "sequenceLabel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled":   { "type": "boolean" },
+        "prefix":    { "type": "string" },
+        "fontFile":  { "type": "string" },
+        "fontSize":  { "type": "number", "exclusiveMinimum": 0 },
+        "fontColor": { "type": "string" },
+        "box":       { "type": "boolean" },
+        "boxColor":  { "type": "string" },
+        "padding":   { "type": "number", "minimum": 0 }
+      }
+    },
     "inputOrderItem": {
       "type": "object",
       "required": ["type"],
@@ -95,7 +109,8 @@
         "type":          { "type": "string", "enum": ["fixed", "edge"] },
         "value":         { "type": "string" },
         "nodeId":        { "type": "string" },
-        "imageDuration": { "type": "number", "exclusiveMinimum": 0 }
+        "imageDuration": { "type": "number", "exclusiveMinimum": 0 },
+        "sequenceLabel": { "$ref": "#/definitions/sequenceLabel" }
       },
       "allOf": [
         {

@@ -30,9 +30,15 @@ vi.mock('../src/executor/runner.js', () => ({
   run: vi.fn(() => Promise.resolve())
 }))
 
+// Mock imageAnnotate so handler tests don't need a real ffmpeg or font file
+vi.mock('../src/executor/nodeHandlers/imageAnnotate.js', () => ({
+  annotateImageWithSequence: vi.fn(() => Promise.resolve())
+}))
+
 import { mkdirSync, existsSync, copyFileSync } from 'fs'
 import { run } from '../src/executor/runner.js'
 import { handleVideoStitcher } from '../src/executor/nodeHandlers/video-stitcher.js'
+import { annotateImageWithSequence } from '../src/executor/nodeHandlers/imageAnnotate.js'
 
 // Helper: build a minimal node object
 function makeNode(id, config, label) {
@@ -765,5 +771,180 @@ describe('handleVideoStitcher', () => {
     await expect(
       handleVideoStitcher(node, ctx, '/tmp/root', edges, {})
     ).rejects.toThrow('upstream node "edge-src" has no outputs in context')
+  })
+
+  // ── sequenceLabel annotation ─────────────────────────────────────────────
+
+  it('calls annotateImageWithSequence for a fixed image with sequenceLabel.enabled', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/title.png', sequenceLabel: { enabled: true, fontFile: '/fonts/Arial.ttf' } },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    expect(annotateImageWithSequence).toHaveBeenCalledTimes(1)
+    const [srcPath, opts] = annotateImageWithSequence.mock.calls[0]
+    expect(srcPath).toBe('/title.png')
+    expect(opts.index).toBe(1)
+    expect(opts.total).toBe(1)
+    expect(opts.fontFile).toBe('/fonts/Arial.ttf')
+    expect(opts.dryRun).toBe(true)
+  })
+
+  it('passes prefix and styling options to annotateImageWithSequence', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        {
+          type: 'fixed',
+          value: '/title.png',
+          sequenceLabel: {
+            enabled: true,
+            prefix: 'scene',
+            fontFile: '/fonts/Arial.ttf',
+            fontSize: 64,
+            fontColor: 'yellow',
+            box: true,
+            boxColor: 'black@0.7',
+            padding: 30,
+          },
+        },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    const [, opts] = annotateImageWithSequence.mock.calls[0]
+    expect(opts.prefix).toBe('scene')
+    expect(opts.fontSize).toBe(64)
+    expect(opts.fontColor).toBe('yellow')
+    expect(opts.box).toBe(true)
+    expect(opts.boxColor).toBe('black@0.7')
+    expect(opts.padding).toBe(30)
+  })
+
+  it('annotates each run with increasing index and correct total', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/title.png', sequenceLabel: { enabled: true, fontFile: '/f.ttf' } },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/s1.mp4', '/s2.mp4', '/s3.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    expect(annotateImageWithSequence).toHaveBeenCalledTimes(3)
+    expect(annotateImageWithSequence.mock.calls[0][1].index).toBe(1)
+    expect(annotateImageWithSequence.mock.calls[0][1].total).toBe(3)
+    expect(annotateImageWithSequence.mock.calls[1][1].index).toBe(2)
+    expect(annotateImageWithSequence.mock.calls[1][1].total).toBe(3)
+    expect(annotateImageWithSequence.mock.calls[2][1].index).toBe(3)
+    expect(annotateImageWithSequence.mock.calls[2][1].total).toBe(3)
+  })
+
+  it('substitutes the annotated path in the video-stitcher argv', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/title.png', sequenceLabel: { enabled: true, fontFile: '/f.ttf' } },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    // The video-stitcher call should use the annotated path, not the original
+    const stitcherCall = run.mock.calls.find((c) => c[0] === 'video-stitcher')
+    expect(stitcherCall).toBeDefined()
+    const stitcherArgv = stitcherCall[1]
+    // Original path should not appear; annotated path under tempRoot/.../annotated/ should
+    expect(stitcherArgv).not.toContain('/title.png')
+    expect(stitcherArgv.some((a) => a.includes('annotated') && a.includes('1_title.png'))).toBe(true)
+  })
+
+  it('preserves :imageDuration suffix on the annotated path', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/title.png', imageDuration: 3, sequenceLabel: { enabled: true, fontFile: '/f.ttf' } },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    const stitcherCall = run.mock.calls.find((c) => c[0] === 'video-stitcher')
+    const argv = stitcherCall[1]
+    // First argv entry should be the annotated path with :3 suffix
+    expect(argv[0]).toMatch(/1_title\.png:3$/)
+  })
+
+  it('creates the annotated subdir and calls annotateImageWithSequence in non-dryRun mode', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/title.png', sequenceLabel: { enabled: true, fontFile: '/f.ttf' } },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], {})
+
+    // annotated subdir is created for non-dryRun
+    const annotDir = path.join('/tmp/root', 'stitch1', 'annotated')
+    expect(mkdirSync).toHaveBeenCalledWith(annotDir, { recursive: true })
+    expect(annotateImageWithSequence).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not call annotateImageWithSequence when sequenceLabel.enabled is false', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/title.png', sequenceLabel: { enabled: false, fontFile: '/f.ttf' } },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    expect(annotateImageWithSequence).not.toHaveBeenCalled()
+  })
+
+  it('does not annotate when sequenceLabel.enabled is true but path is not an image', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/intro.mp4', sequenceLabel: { enabled: true, fontFile: '/f.ttf' } },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    expect(annotateImageWithSequence).not.toHaveBeenCalled()
+    // Original path passes through unchanged
+    const stitcherCall = run.mock.calls.find((c) => c[0] === 'video-stitcher')
+    expect(stitcherCall[1][0]).toBe('/intro.mp4')
+  })
+
+  it('does not annotate edge items even if they happen to be images', async () => {
+    // Edge items never carry sequenceLabel — they're just file paths from upstream
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/intro.mp4' },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/title.png'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    expect(annotateImageWithSequence).not.toHaveBeenCalled()
   })
 })
