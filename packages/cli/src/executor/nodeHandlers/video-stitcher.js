@@ -18,6 +18,13 @@ import os from 'os'
 import path from 'path'
 import { mkdirSync, existsSync, copyFileSync } from 'fs'
 import { run } from '../runner.js'
+import { annotateImageWithSequence } from './imageAnnotate.js'
+
+const IMAGE_EXTS = /\.(png|jpe?g|gif|webp|bmp|tiff?|avif|svg)$/i
+
+function isImage(filePath) {
+  return IMAGE_EXTS.test(filePath)
+}
 
 function expandPath(p) {
   return p.startsWith('~/') ? path.join(os.homedir(), p.slice(2)) : p
@@ -25,7 +32,8 @@ function expandPath(p) {
 
 /**
  * Builds the list of per-run inputs from inputOrder + edge outputs.
- * Returns an array of { inputs: string[], name: string } — one entry per output file.
+ * Returns { runs, runCount } where each run is:
+ *   { inputs: Array<{ value: string, imageDuration?: number, sequenceLabel?: object }>, name: string }
  *
  * When an edge item expands to N files, N runs are produced (one per edge file),
  * with fixed items applied to every run. The output filename equals the basename
@@ -51,8 +59,8 @@ function buildRuns(config, incomingEdges, context, nodeId) {
       // No edge connections — single run with all fixed inputs
       const inputs = config.inputOrder
         .filter((i) => i.type === 'fixed' && i.value)
-        .map((i) => i.imageDuration != null ? `${i.value}:${i.imageDuration}` : i.value)
-      return [{ inputs, name: 'output.mp4' }]
+        .map((i) => ({ value: i.value, imageDuration: i.imageDuration, sequenceLabel: i.sequenceLabel }))
+      return { runs: [{ inputs, name: 'output.mp4' }], runCount: 1 }
     }
 
     // Number of runs = max file count across all edge items
@@ -75,12 +83,14 @@ function buildRuns(config, incomingEdges, context, nodeId) {
       const inputs = []
       for (const item of config.inputOrder) {
         if (item.type === 'fixed') {
-          if (item.value) inputs.push(item.imageDuration != null ? `${item.value}:${item.imageDuration}` : item.value)
+          if (item.value) {
+            inputs.push({ value: item.value, imageDuration: item.imageDuration, sequenceLabel: item.sequenceLabel })
+          }
         } else if (item.type === 'edge') {
           const files = edgeOutputs.get(item.nodeId) ?? []
           // Use file i; clamp to last available if this edge has fewer files
           const file = files[Math.min(i, files.length - 1)]
-          if (file) inputs.push(file)
+          if (file) inputs.push({ value: file })
         }
       }
       const pivotFile = pivotFiles[i]
@@ -93,7 +103,7 @@ function buildRuns(config, incomingEdges, context, nodeId) {
         : `output_${String(i + 1).padStart(3, '0')}.mp4`
       runs.push({ inputs, name })
     }
-    return runs
+    return { runs, runCount }
   } else {
     // Legacy: fixed inputs first, then all edge outputs — single run
     const fixedInputs = Array.isArray(config.inputs) ? config.inputs.filter(Boolean) : []
@@ -107,8 +117,18 @@ function buildRuns(config, incomingEdges, context, nodeId) {
       }
       variableInputs.push(...(sourceCtx.outputs ?? []))
     }
-    return [{ inputs: [...fixedInputs, ...variableInputs], name: 'output.mp4' }]
+    const inputs = [...fixedInputs, ...variableInputs].map((v) => ({ value: v }))
+    return { runs: [{ inputs, name: 'output.mp4' }], runCount: 1 }
   }
+}
+
+/**
+ * Flattens an input object to the CLI string expected by video-stitcher:
+ *   - image with duration → "path:duration"
+ *   - otherwise          → "path"
+ */
+function flattenInput({ value, imageDuration }) {
+  return imageDuration != null ? `${value}:${imageDuration}` : value
 }
 
 /**
@@ -135,11 +155,13 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
 
   if (!opts.dryRun) mkdirSync(outputDir, { recursive: true })
 
-  const runs = buildRuns(config, incomingEdges, context, node.id)
+  const { runs, runCount } = buildRuns(config, incomingEdges, context, node.id)
 
   const outputFiles = []
 
-  for (const { inputs, name } of runs) {
+  for (let runIdx = 0; runIdx < runs.length; runIdx++) {
+    const { inputs, name } = runs[runIdx]
+
     if (inputs.length < 2) {
       throw new Error(
         `Node "${node.id}" (video-stitcher): at least 2 inputs required for "${name}", got ${inputs.length}`
@@ -156,7 +178,40 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
       )
     }
 
-    const argv = [...inputs, '-o', outputFile]
+    // Pre-process any fixed image inputs that have sequenceLabel.enabled
+    const resolvedInputs = await Promise.all(
+      inputs.map(async (input) => {
+        const sl = input.sequenceLabel
+        if (!sl?.enabled || !isImage(input.value)) return input
+
+        const annotDir = path.join(tempRoot, node.id, 'annotated')
+        if (!opts.dryRun) mkdirSync(annotDir, { recursive: true })
+
+        const ext = path.extname(input.value)
+        const base = path.basename(input.value, ext)
+        const destPath = path.join(annotDir, `${runIdx + 1}_${base}${ext}`)
+
+        await annotateImageWithSequence(input.value, {
+          index: runIdx + 1,
+          total: runCount,
+          prefix: sl.prefix,
+          fontFile: sl.fontFile,
+          fontSize: sl.fontSize,
+          fontColor: sl.fontColor,
+          box: sl.box,
+          boxColor: sl.boxColor,
+          padding: sl.padding,
+          destPath,
+          label: `${node.label ?? node.id} [annotate ${runIdx + 1}/${runCount}]`,
+          dryRun: opts.dryRun,
+        })
+
+        return { ...input, value: destPath }
+      })
+    )
+
+    const cliInputs = resolvedInputs.map(flattenInput)
+    const argv = [...cliInputs, '-o', outputFile]
 
     if (config.imageDuration != null && config.imageDuration !== 1) {
       argv.push('-d', String(config.imageDuration))

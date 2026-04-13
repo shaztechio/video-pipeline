@@ -340,6 +340,53 @@
   color: #c9d1d9;
 }
 
+.seqLabelPanel {
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.seqLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.seqLabelKey {
+  font-size: 10px;
+  color: #6e7681;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.seqLabelInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.seqLabelToggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #c9d1d9;
+  cursor: pointer;
+  user-select: none;
+}
+
+.seqLabelToggle input[type="checkbox"] {
+  accent-color: #388bfd;
+  cursor: pointer;
+}
+
+.seqLabelWarn {
+  font-size: 10px;
+  color: #e3b341;
+  line-height: 1.4;
+}
+
 .edgeBadge {
   font-size: 9px;
   font-weight: 700;
