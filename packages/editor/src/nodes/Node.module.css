@@ -381,6 +381,12 @@
   cursor: pointer;
 }
 
+.seqLabelWarn {
+  font-size: 10px;
+  color: #e3b341;
+  line-height: 1.4;
+}
+
 .edgeBadge {
   font-size: 9px;
   font-weight: 700;

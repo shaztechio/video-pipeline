@@ -95,12 +95,18 @@
         "enabled":   { "type": "boolean" },
         "prefix":    { "type": "string" },
         "fontFile":  { "type": "string" },
-        "fontSize":  { "type": "number", "exclusiveMinimum": 0 },
+        "fontSize":  { "type": "integer", "exclusiveMinimum": 0 },
         "fontColor": { "type": "string" },
         "box":       { "type": "boolean" },
         "boxColor":  { "type": "string" },
-        "padding":   { "type": "number", "minimum": 0 }
-      }
+        "padding":   { "type": "integer", "minimum": 0 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+          "then": { "required": ["fontFile"] }
+        }
+      ]
     },
     "inputOrderItem": {
       "type": "object",

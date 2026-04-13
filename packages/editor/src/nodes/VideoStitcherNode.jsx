@@ -90,7 +90,7 @@ export default function VideoStitcherNode({ id, data, selected }) {
   function setItemSequenceLabel(index, partial) {
     syncOrder(inputOrder.map((item, i) => {
       if (i !== index) return item
-      return { ...item, sequenceLabel: { ...item.sequenceLabel, ...partial } }
+      return { ...item, sequenceLabel: { ...(item.sequenceLabel ?? {}), ...partial } }
     }))
   }
 
@@ -320,6 +320,11 @@ export default function VideoStitcherNode({ id, data, selected }) {
                         <span>Enable sequence number</span>
                       </label>
                     </div>
+                    {enabled && !sl.fontFile && (
+                      <div className={styles.seqLabelRow}>
+                        <span className={styles.seqLabelWarn}>⚠ A font file is required — select one below before the label will render.</span>
+                      </div>
+                    )}
                     {enabled && (
                       <>
                         <div className={styles.seqLabelRow}>
