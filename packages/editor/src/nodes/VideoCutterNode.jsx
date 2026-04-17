@@ -77,16 +77,38 @@ export default function VideoCutterNode({ id, data, selected }) {
           ))}
         </div>
 
-        <input
-          className={styles.input}
-          type="number"
-          min={1}
-          placeholder={CUTTING_MODES.find((m) => m.key === activeCutMode)?.placeholder}
-          value={config[activeCutMode] ?? ''}
-          onChange={(e) =>
-            updateConfig(id, { [activeCutMode]: e.target.value ? Number(e.target.value) : null })
-          }
-        />
+        <div className={styles.stepperRow}>
+          <input
+            className={styles.input}
+            type="text"
+            inputMode="numeric"
+            placeholder={CUTTING_MODES.find((m) => m.key === activeCutMode)?.placeholder}
+            value={config[activeCutMode] ?? ''}
+            onChange={(e) => {
+              const v = Number(e.target.value)
+              updateConfig(id, { [activeCutMode]: e.target.value !== '' && !isNaN(v) ? v : null })
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          />
+          <div className={styles.stepperBtns}>
+            <button
+              className={styles.stepBtn}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                const cur = config[activeCutMode] ?? 1
+                updateConfig(id, { [activeCutMode]: cur + 1 })
+              }}
+            >▲</button>
+            <button
+              className={styles.stepBtn}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                const cur = config[activeCutMode] ?? 1
+                updateConfig(id, { [activeCutMode]: Math.max(1, cur - 1) })
+              }}
+            >▼</button>
+          </div>
+        </div>
 
         <div className={styles.checkboxRow}>
           <label className={styles.checkbox}>
