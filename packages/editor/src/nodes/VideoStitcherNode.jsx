@@ -338,6 +338,34 @@ export default function VideoStitcherNode({ id, data, selected }) {
                           />
                         </div>
                         <div className={styles.seqLabelRow}>
+                          <span className={styles.seqLabelKey}>Total offset</span>
+                          <div className={styles.stepperRow}>
+                            <input
+                              className={`${styles.input} ${styles.seqLabelInput}`}
+                              type="text"
+                              inputMode="numeric"
+                              value={sl.totalOffset ?? 0}
+                              onChange={(e) => {
+                                const v = parseInt(e.target.value, 10)
+                                if (!isNaN(v)) setItemSequenceLabel(i, { totalOffset: v })
+                              }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                            />
+                            <div className={styles.stepperBtns}>
+                              <button
+                                className={styles.stepBtn}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={() => setItemSequenceLabel(i, { totalOffset: (sl.totalOffset ?? 0) + 1 })}
+                              >▲</button>
+                              <button
+                                className={styles.stepBtn}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={() => setItemSequenceLabel(i, { totalOffset: (sl.totalOffset ?? 0) - 1 })}
+                              >▼</button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={styles.seqLabelRow}>
                           <span className={styles.seqLabelKey}>Font file</span>
                           <FileInput
                             placeholder="/path/to/font.ttf"

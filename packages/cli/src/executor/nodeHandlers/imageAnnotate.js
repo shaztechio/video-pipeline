@@ -52,6 +52,7 @@ function escapeFilterPath(p) {
 export async function annotateImageWithSequence(srcPath, {
   index,
   total,
+  totalOffset = 0,
   prefix,
   fontFile,
   fontSize = 48,
@@ -76,7 +77,8 @@ export async function annotateImageWithSequence(srcPath, {
   }
 
   // Compose label text
-  const text = prefix ? `${prefix} ${index}/${total}` : `${index}/${total}`
+  const effectiveTotal = total + (totalOffset ?? 0)
+  const text = prefix ? `${prefix} ${index}/${effectiveTotal}` : `${index}/${effectiveTotal}`
 
   console.log(
     chalk.dim(`  [seq-label] Annotating ${path.basename(srcPath)} `) +

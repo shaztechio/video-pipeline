@@ -201,6 +201,7 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
           box: sl.box,
           boxColor: sl.boxColor,
           padding: sl.padding,
+          totalOffset: sl.totalOffset,
           destPath,
           label: `${node.label ?? node.id} [annotate ${runIdx + 1}/${runCount}]`,
           dryRun: opts.dryRun,
