@@ -84,6 +84,22 @@ describe('annotateImageWithSequence', () => {
     expect(text).toBe('scene 2/8')
   })
 
+  it('applies totalOffset to the denominator', async () => {
+    await annotateImageWithSequence('/img.png', {
+      index: 9, total: 9, totalOffset: -1, fontFile: '/f.ttf', destPath: '/out/9_img.png',
+    })
+    const [, text] = writeFileSync.mock.calls[0]
+    expect(text).toBe('9/8')
+  })
+
+  it('totalOffset defaults to 0 when omitted', async () => {
+    await annotateImageWithSequence('/img.png', {
+      index: 1, total: 5, fontFile: '/f.ttf', destPath: '/out/1_img.png',
+    })
+    const [, text] = writeFileSync.mock.calls[0]
+    expect(text).toBe('1/5')
+  })
+
   it('writes the sidecar file next to destPath with .txt extension', async () => {
     await annotateImageWithSequence('/img.png', {
       index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/annotated/1_img.png',

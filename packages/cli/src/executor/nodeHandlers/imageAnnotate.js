@@ -77,7 +77,7 @@ export async function annotateImageWithSequence(srcPath, {
   }
 
   // Compose label text
-  const effectiveTotal = total + (totalOffset ?? 0)
+  const effectiveTotal = total + totalOffset
   const text = prefix ? `${prefix} ${index}/${effectiveTotal}` : `${index}/${effectiveTotal}`
 
   console.log(
