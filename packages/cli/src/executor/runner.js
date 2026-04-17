@@ -63,9 +63,10 @@ export async function run(bin, args, opts = {}) {
       const proc = spawn(resolved, args, { stdio: ['pipe', 'inherit', 'inherit'] })
       proc.stdin.write(opts.input)
       proc.stdin.end()
-      proc.on('close', (code) => {
+      proc.on('exit', (code, signal) => {
+        proc.stdin.destroy()
         if (code === 0) resolve()
-        else reject(new Error(`${bin} exited with code ${code}`))
+        else reject(new Error(`${bin} exited with code ${code ?? `signal ${signal}`}`))
       })
       proc.on('error', reject)
     })
