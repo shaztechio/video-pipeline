@@ -57,6 +57,7 @@ The editor lets you:
 - Set a glob filter on Input Folder nodes (e.g. `*.mp4`; blank = all files)
 - Drag inputs to reorder them within a Stitcher node
 - Set per-image duration overrides (✎ pencil icon on image inputs)
+- Burn a sequence number label (e.g. `scene 3/10`) into fixed image inputs via the **#** button — configure prefix, font, size, colour, background box, padding, and a total offset to adjust the denominator
 - Delete nodes with the **×** button that appears on hover
 - Save with **⌘S** (macOS) / **Ctrl+S** (Windows/Linux) or the Save button
 
@@ -193,6 +194,41 @@ Connect an **Output Folder** node to override. Multiple Output Folder nodes can 
 | `value` | `string` | File path (fixed items only) |
 | `nodeId` | `string` | Source node id (edge items only) |
 | `imageDuration` | `number` | Per-image duration override in seconds (fixed image items only) |
+| `sequenceLabel` | `object` | Burn a sequence number into a fixed image input (see below) |
+
+### `sequenceLabel` (fixed image inputs)
+
+Burns text like `scene 3/10` into the bottom-right corner of an image using FFmpeg `drawtext`. Requires a TTF/OTF font file.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean` | — | Must be `true` to activate |
+| `prefix` | `string` | — | Optional text before the number, e.g. `"scene"` → `scene 3/10` |
+| `fontFile` | `string` | — | Path to a `.ttf`/`.otf`/`.ttc` font file (required) |
+| `fontSize` | `number` | `48` | Font size in pixels |
+| `fontColor` | `string` | `"white"` | FFmpeg colour string, e.g. `"white"`, `"yellow"` |
+| `box` | `boolean` | `false` | Draw a semi-transparent background box behind the text |
+| `boxColor` | `string` | `"black@0.5"` | FFmpeg colour string for the box (only when `box` is `true`) |
+| `padding` | `number` | `20` | Distance from the right and bottom edges in pixels |
+| `totalOffset` | `number` | `0` | Integer added to the total count in the denominator. Use `-1` to make the last segment overflow intentionally (e.g. 9 runs → `1/8` … `9/8`). |
+
+**Example** — thumbnail with `scene N/8` label (9 segments, last is discarded):
+
+```json
+{
+  "type": "fixed",
+  "value": "/path/to/thumbnail.png",
+  "imageDuration": 2,
+  "sequenceLabel": {
+    "enabled": true,
+    "prefix": "scene",
+    "fontFile": "/path/to/font.ttf",
+    "fontSize": 80,
+    "box": true,
+    "totalOffset": -1
+  }
+}
+```
 
 ### `input-folder` config
 
