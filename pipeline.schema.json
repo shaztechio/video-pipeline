@@ -92,14 +92,15 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "enabled":   { "type": "boolean" },
-        "prefix":    { "type": "string" },
-        "fontFile":  { "type": "string" },
-        "fontSize":  { "type": "integer", "exclusiveMinimum": 0 },
-        "fontColor": { "type": "string" },
-        "box":       { "type": "boolean" },
-        "boxColor":  { "type": "string" },
-        "padding":   { "type": "integer", "minimum": 0 }
+        "enabled":     { "type": "boolean" },
+        "prefix":      { "type": "string" },
+        "fontFile":    { "type": "string" },
+        "fontSize":    { "type": "integer", "exclusiveMinimum": 0 },
+        "fontColor":   { "type": "string" },
+        "box":         { "type": "boolean" },
+        "boxColor":    { "type": "string" },
+        "padding":     { "type": "integer", "minimum": 0 },
+        "totalOffset": { "type": "integer" }
       },
       "allOf": [
         {
@@ -138,7 +139,8 @@
         "output":        { "type": ["string", "null"] },
         "imageDuration": { "type": "number", "exclusiveMinimum": 0 },
         "bgAudio":       { "type": ["string", "null"] },
-        "bgAudioVolume": { "type": "number", "minimum": 0, "maximum": 2 }
+        "bgAudioVolume": { "type": "number", "minimum": 0, "maximum": 2 },
+        "sequenceLabel": { "$ref": "#/definitions/sequenceLabel" }
       }
     },
     "outputFolderConfig": {

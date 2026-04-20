@@ -201,6 +201,68 @@ describe('validateSpec', () => {
     expect(result.errors).toContain('Edge "e2" references unknown target node: NONEXISTENT')
   })
 
+  // ── video-stitcher sequenceLabel mutual exclusion ─────────────────────────
+
+  it('returns invalid when both config.sequenceLabel.enabled and a per-image sequenceLabel.enabled are true', () => {
+    const spec = {
+      version: '1',
+      name: 'x',
+      nodes: [{
+        id: 's1',
+        type: 'video-stitcher',
+        config: {
+          sequenceLabel: { enabled: true, fontFile: '/f.ttf' },
+          inputOrder: [
+            { type: 'fixed', value: '/img.png', sequenceLabel: { enabled: true, fontFile: '/f.ttf' } }
+          ]
+        }
+      }],
+      edges: []
+    }
+    const result = validateSpec(spec)
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((e) => e.includes('mutually exclusive'))).toBe(true)
+  })
+
+  it('returns valid when only config.sequenceLabel.enabled is true (no per-image)', () => {
+    const spec = {
+      version: '1',
+      name: 'x',
+      nodes: [{
+        id: 's1',
+        type: 'video-stitcher',
+        config: {
+          sequenceLabel: { enabled: true, fontFile: '/f.ttf' },
+          inputOrder: [
+            { type: 'fixed', value: '/img.png' }
+          ]
+        }
+      }],
+      edges: []
+    }
+    const result = validateSpec(spec)
+    expect(result).toEqual({ valid: true })
+  })
+
+  it('returns valid when only a per-image sequenceLabel.enabled is true (no video-level)', () => {
+    const spec = {
+      version: '1',
+      name: 'x',
+      nodes: [{
+        id: 's1',
+        type: 'video-stitcher',
+        config: {
+          inputOrder: [
+            { type: 'fixed', value: '/img.png', sequenceLabel: { enabled: true, fontFile: '/f.ttf' } }
+          ]
+        }
+      }],
+      edges: []
+    }
+    const result = validateSpec(spec)
+    expect(result).toEqual({ valid: true })
+  })
+
   // ── valid spec ────────────────────────────────────────────────────────────
 
   it('returns valid for a well-formed spec with nodes and edges', () => {
