@@ -16,7 +16,7 @@
 
 import os from 'os'
 import path from 'path'
-import { mkdirSync, rmSync, readdirSync, copyFileSync } from 'fs'
+import { mkdirSync, rmSync, readdirSync, copyFileSync, existsSync } from 'fs'
 import { glob } from 'glob'
 import { run } from '../runner.js'
 
@@ -84,7 +84,16 @@ export async function handleVideoCutter(node, context, _tempRoot, opts = {}) {
       : baseOutputDir
 
     if (!opts.dryRun) {
-      if (opts.overwrite) rmSync(outputDir, { recursive: true, force: true })
+      if (opts.overwrite) {
+        rmSync(outputDir, { recursive: true, force: true })
+      } else if (existsSync(outputDir)) {
+        const existing = await glob('**/*.mp4', { cwd: outputDir })
+        if (existing.length > 0) {
+          throw new Error(
+            `Node "${node.id}" (video-cutter): output already exists at ${outputDir}\nUse --overwrite to re-cut.`
+          )
+        }
+      }
       mkdirSync(outputDir, { recursive: true })
     }
 

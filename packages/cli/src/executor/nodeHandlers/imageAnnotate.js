@@ -15,7 +15,7 @@
  */
 
 import path from 'path'
-import { existsSync, writeFileSync } from 'fs'
+import { existsSync, writeFileSync, unlinkSync } from 'fs'
 import chalk from 'chalk'
 import { run } from '../runner.js'
 
@@ -31,25 +31,10 @@ function escapeFilterPath(p) {
 }
 
 /**
- * Burns a sequence label (e.g. "scene 3/10") into the bottom-right corner of
- * an image using ffmpeg drawtext.
- *
- * @param {string} srcPath - absolute path to the source image
- * @param {object} opts
- * @param {number}  opts.index     - 1-based sequence index
- * @param {number}  opts.total     - total item count
- * @param {string}  [opts.prefix]  - optional prefix, e.g. "scene" → "scene 3/10"
- * @param {string}  opts.fontFile  - path to a .ttf/.otf/.ttc font file (required)
- * @param {number}  [opts.fontSize=48]
- * @param {string}  [opts.fontColor='white']
- * @param {boolean} [opts.box=false]          - draw a semi-transparent background box
- * @param {string}  [opts.boxColor='black@0.5']
- * @param {number}  [opts.padding=20]         - px distance from right & bottom edges
- * @param {string}  opts.destPath  - absolute path to write the annotated image
- * @param {string}  [opts.label]   - display label for the run() spinner
- * @param {boolean} [opts.dryRun=false]
+ * Validates fontFile and composes the drawtext filter string and sidecar text file path.
+ * Shared by both image and video annotation helpers.
  */
-export async function annotateImageWithSequence(srcPath, {
+function buildDrawtextArgs(srcLabel, {
   index,
   total,
   totalOffset = 0,
@@ -61,12 +46,11 @@ export async function annotateImageWithSequence(srcPath, {
   boxColor = 'black@0.5',
   padding = 20,
   destPath,
-  label,
   dryRun = false,
 }) {
   if (!fontFile) {
     throw new Error(
-      `sequenceLabel: fontFile is required but was not provided (item: "${srcPath}")`
+      `sequenceLabel: fontFile is required but was not provided (item: "${srcLabel}")`
     )
   }
 
@@ -76,29 +60,11 @@ export async function annotateImageWithSequence(srcPath, {
     )
   }
 
-  // Compose label text
   const effectiveTotal = total + totalOffset
   const text = prefix ? `${prefix} ${index}/${effectiveTotal}` : `${index}/${effectiveTotal}`
 
-  console.log(
-    chalk.dim(`  [seq-label] Annotating ${path.basename(srcPath)} `) +
-    chalk.cyan(`"${text}"`) +
-    chalk.dim(` → ${path.basename(destPath)}`)
-  )
-
-  // Write text to a sidecar file so we don't have to worry about ffmpeg
-  // filter-string escaping of the text itself (handles apostrophes, colons, etc.)
   const textFile = `${destPath}.txt`
 
-  if (!dryRun) {
-    console.log(chalk.dim(`  [seq-label]   text file: ${textFile}`))
-    writeFileSync(textFile, text, 'utf8')
-    console.log(chalk.dim(`  [seq-label]   font file: ${fontFile}`))
-    console.log(chalk.dim(`  [seq-label]   dest path: ${destPath}`))
-  }
-
-  // Build drawtext filter. x/y place the text padding px from right/bottom edges.
-  // w, h, tw, th are built-in ffmpeg drawtext variables.
   const escapedFontFile = escapeFilterPath(fontFile)
   const escapedTextFile = escapeFilterPath(textFile)
   const x = `w-tw-${padding}`
@@ -116,9 +82,49 @@ export async function annotateImageWithSequence(srcPath, {
     filterStr += `:box=1:boxcolor=${boxColor}:boxborderw=8`
   }
 
+  return { text, textFile, filterStr }
+}
+
+/**
+ * Burns a sequence label (e.g. "scene 3/10") into the bottom-right corner of
+ * an image using ffmpeg drawtext.
+ *
+ * @param {string} srcPath - absolute path to the source image
+ * @param {object} opts
+ * @param {number}  opts.index     - 1-based sequence index
+ * @param {number}  opts.total     - total item count
+ * @param {string}  [opts.prefix]  - optional prefix, e.g. "scene" → "scene 3/10"
+ * @param {string}  opts.fontFile  - path to a .ttf/.otf/.ttc font file (required)
+ * @param {number}  [opts.fontSize=48]
+ * @param {string}  [opts.fontColor='white']
+ * @param {boolean} [opts.box=false]          - draw a semi-transparent background box
+ * @param {string}  [opts.boxColor='black@0.5']
+ * @param {number}  [opts.padding=20]         - px distance from right & bottom edges
+ * @param {number}  [opts.totalOffset=0]      - integer added to the denominator
+ * @param {string}  opts.destPath  - absolute path to write the annotated image
+ * @param {string}  [opts.label]   - display label for the run() spinner
+ * @param {boolean} [opts.dryRun=false]
+ */
+export async function annotateImageWithSequence(srcPath, opts) {
+  const { destPath, label, dryRun = false, index, total } = opts
+  const { text, textFile, filterStr } = buildDrawtextArgs(srcPath, opts)
+
+  console.log(
+    chalk.dim(`  [seq-label] Annotating ${path.basename(srcPath)} `) +
+    chalk.cyan(`"${text}"`) +
+    chalk.dim(` → ${path.basename(destPath)}`)
+  )
+
+  if (!dryRun) {
+    console.log(chalk.dim(`  [seq-label]   text file: ${textFile}`))
+    writeFileSync(textFile, text, 'utf8')
+    console.log(chalk.dim(`  [seq-label]   font file: ${opts.fontFile}`))
+    console.log(chalk.dim(`  [seq-label]   dest path: ${destPath}`))
+  }
+
   const argv = [
-    '-nostdin',          // prevent ffmpeg from reading stdin (avoids hangs in pipelines)
-    '-loglevel', 'warning', // suppress verbose progress output
+    '-nostdin',
+    '-loglevel', 'warning',
     '-y',
     '-i', srcPath,
     '-vf', filterStr,
@@ -130,4 +136,53 @@ export async function annotateImageWithSequence(srcPath, {
     label: label ?? `annotate ${index}/${total}`,
     dryRun,
   })
+
+  if (!dryRun) {
+    try { unlinkSync(textFile) } catch {}
+  }
+}
+
+/**
+ * Burns a sequence label (e.g. "scene 3/10") into the bottom-right corner of
+ * a video file using ffmpeg drawtext. Used for the whole-output-video label on
+ * a stitcher node. Audio is stream-copied to avoid re-encoding.
+ *
+ * @param {string} srcPath - absolute path to the source video
+ * @param {object} opts    - same signature as annotateImageWithSequence
+ */
+export async function annotateVideoWithSequence(srcPath, opts) {
+  const { destPath, label, dryRun = false, index, total } = opts
+  const { text, textFile, filterStr } = buildDrawtextArgs(srcPath, opts)
+
+  console.log(
+    chalk.dim(`  [seq-label] Annotating ${path.basename(srcPath)} `) +
+    chalk.cyan(`"${text}"`) +
+    chalk.dim(` → ${path.basename(destPath)}`)
+  )
+
+  if (!dryRun) {
+    console.log(chalk.dim(`  [seq-label]   text file: ${textFile}`))
+    writeFileSync(textFile, text, 'utf8')
+    console.log(chalk.dim(`  [seq-label]   font file: ${opts.fontFile}`))
+    console.log(chalk.dim(`  [seq-label]   dest path: ${destPath}`))
+  }
+
+  const argv = [
+    '-nostdin',
+    '-loglevel', 'warning',
+    '-y',
+    '-i', srcPath,
+    '-vf', filterStr,
+    '-c:a', 'copy',
+    destPath,
+  ]
+
+  await run('ffmpeg', argv, {
+    label: label ?? `annotate ${index}/${total}`,
+    dryRun,
+  })
+
+  if (!dryRun) {
+    try { unlinkSync(textFile) } catch {}
+  }
 }

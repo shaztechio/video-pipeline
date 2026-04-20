@@ -26,6 +26,173 @@ function isImage(filePath) {
   return filePath ? IMAGE_EXTS.test(filePath) : false
 }
 
+function SequenceLabelPanel({ value, onSet, onClear }) {
+  const sl = value ?? {}
+  const enabled = sl.enabled ?? false
+  return (
+    <div className={styles.seqLabelPanel}>
+      <div className={styles.seqLabelRow}>
+        <label className={styles.seqLabelToggle}>
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => {
+              if (e.target.checked) {
+                onSet({ enabled: true })
+              } else {
+                onClear()
+              }
+            }}
+          />
+          <span>Enable sequence number</span>
+        </label>
+      </div>
+      {enabled && !sl.fontFile && (
+        <div className={styles.seqLabelRow}>
+          <span className={styles.seqLabelWarn}>⚠ A font file is required — select one below before the label will render.</span>
+        </div>
+      )}
+      {enabled && (
+        <>
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Prefix</span>
+            <input
+              className={`${styles.input} ${styles.seqLabelInput}`}
+              type="text"
+              placeholder='e.g. "scene" → scene 1/10'
+              value={sl.prefix ?? ''}
+              onChange={(e) => onSet({ prefix: e.target.value || undefined })}
+            />
+          </div>
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Total offset</span>
+            <div className={styles.stepperRow}>
+              <input
+                className={`${styles.input} ${styles.seqLabelInput}`}
+                type="text"
+                inputMode="numeric"
+                value={sl.totalOffset ?? 0}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  if (!isNaN(v)) onSet({ totalOffset: v })
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+              <div className={styles.stepperBtns}>
+                <button
+                  className={styles.stepBtn}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSet({ totalOffset: (sl.totalOffset ?? 0) + 1 })}
+                >▲</button>
+                <button
+                  className={styles.stepBtn}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSet({ totalOffset: (sl.totalOffset ?? 0) - 1 })}
+                >▼</button>
+              </div>
+            </div>
+          </div>
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Font file</span>
+            <FileInput
+              placeholder="/path/to/font.ttf"
+              value={sl.fontFile ?? ''}
+              accept=".ttf,.otf,.ttc"
+              onChange={(v) => onSet({ fontFile: v || undefined })}
+            />
+          </div>
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Font size</span>
+            <div className={styles.stepperRow}>
+              <input
+                className={`${styles.input} ${styles.seqLabelInput}`}
+                type="text"
+                inputMode="numeric"
+                value={sl.fontSize ?? 48}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  if (!isNaN(v) && v > 0) onSet({ fontSize: v })
+                }}
+              />
+              <div className={styles.stepperBtns}>
+                <button
+                  className={styles.stepBtn}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSet({ fontSize: (sl.fontSize ?? 48) + 2 })}
+                >▲</button>
+                <button
+                  className={styles.stepBtn}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSet({ fontSize: Math.max(8, (sl.fontSize ?? 48) - 2) })}
+                >▼</button>
+              </div>
+            </div>
+          </div>
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Font color</span>
+            <input
+              className={`${styles.input} ${styles.seqLabelInput}`}
+              type="text"
+              placeholder="white"
+              value={sl.fontColor ?? ''}
+              onChange={(e) => onSet({ fontColor: e.target.value || undefined })}
+            />
+          </div>
+          <div className={styles.seqLabelRow}>
+            <label className={styles.seqLabelToggle}>
+              <input
+                type="checkbox"
+                checked={sl.box ?? false}
+                onChange={(e) => onSet({ box: e.target.checked })}
+              />
+              <span>Background box</span>
+            </label>
+          </div>
+          {sl.box && (
+            <div className={styles.seqLabelRow}>
+              <span className={styles.seqLabelKey}>Box color</span>
+              <input
+                className={`${styles.input} ${styles.seqLabelInput}`}
+                type="text"
+                placeholder="black@0.5"
+                value={sl.boxColor ?? ''}
+                onChange={(e) => onSet({ boxColor: e.target.value || undefined })}
+              />
+            </div>
+          )}
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Padding (px)</span>
+            <div className={styles.stepperRow}>
+              <input
+                className={`${styles.input} ${styles.seqLabelInput}`}
+                type="text"
+                inputMode="numeric"
+                value={sl.padding ?? 20}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  if (!isNaN(v) && v >= 0) onSet({ padding: v })
+                }}
+              />
+              <div className={styles.stepperBtns}>
+                <button
+                  className={styles.stepBtn}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSet({ padding: (sl.padding ?? 20) + 2 })}
+                >▲</button>
+                <button
+                  className={styles.stepBtn}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSet({ padding: Math.max(0, (sl.padding ?? 20) - 2) })}
+                >▼</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function VideoStitcherNode({ id, data, selected }) {
   const { config, label } = data
   const updateConfig = useStore((s) => s.updateNodeConfig)
@@ -40,6 +207,7 @@ export default function VideoStitcherNode({ id, data, selected }) {
   const [editingDurationIdx, setEditingDurationIdx] = useState(null)
   const [overrideDurationText, setOverrideDurationText] = useState('')
   const [editingSeqLabelIdx, setEditingSeqLabelIdx] = useState(null)
+  const [editingVideoSeqLabel, setEditingVideoSeqLabel] = useState(false)
 
   // Migrate from legacy config.inputs if inputOrder not yet present
   const inputOrder = config.inputOrder ??
@@ -104,6 +272,24 @@ export default function VideoStitcherNode({ id, data, selected }) {
 
   function toggleSeqLabelEditor(index) {
     setEditingSeqLabelIdx(editingSeqLabelIdx === index ? null : index)
+  }
+
+  function setVideoSequenceLabel(partial) {
+    // When enabling whole-video label, set enabled=false on all per-image labels so
+    // the spec stays valid (per-image config is preserved, just not active).
+    if (partial.enabled === true) {
+      const disabledOrder = inputOrder.map((item) =>
+        item.sequenceLabel?.enabled
+          ? { ...item, sequenceLabel: { ...item.sequenceLabel, enabled: false } }
+          : item
+      )
+      syncOrder(disabledOrder)
+    }
+    updateConfig(id, { sequenceLabel: { ...(config.sequenceLabel ?? {}), ...partial } })
+  }
+
+  function clearVideoSequenceLabel() {
+    updateConfig(id, { sequenceLabel: undefined })
   }
 
   function toggleDurationEditor(index, item) {
@@ -184,6 +370,11 @@ export default function VideoStitcherNode({ id, data, selected }) {
       </div>
 
       <div className={styles.body}>
+        {config.sequenceLabel?.enabled && (
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelWarn}>⚠ Whole-video sequence label is enabled — per-image sequence labels are disabled.</span>
+          </div>
+        )}
         <div className={styles.sectionHeader}>
           <label className={styles.fieldLabel}>Inputs</label>
           <button className={styles.addBtn} onClick={addFixedInput}>+ Add file</button>
@@ -232,14 +423,16 @@ export default function VideoStitcherNode({ id, data, selected }) {
                         >
                           ✎
                         </button>
-                        <button
-                          className={`${styles.pencilBtn} ${editingSeqLabelIdx === i || item.sequenceLabel?.enabled ? styles.pencilActive : ''}`}
-                          title={item.sequenceLabel?.enabled ? `Sequence label: ${item.sequenceLabel.prefix ? item.sequenceLabel.prefix + ' ' : ''}N/M` : 'Add sequence number'}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={() => toggleSeqLabelEditor(i)}
-                        >
-                          #
-                        </button>
+                        {!config.sequenceLabel?.enabled && (
+                          <button
+                            className={`${styles.pencilBtn} ${editingSeqLabelIdx === i || item.sequenceLabel?.enabled ? styles.pencilActive : ''}`}
+                            title={item.sequenceLabel?.enabled ? `Sequence label: ${item.sequenceLabel.prefix ? item.sequenceLabel.prefix + ' ' : ''}N/M` : 'Add sequence number'}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={() => toggleSeqLabelEditor(i)}
+                          >
+                            #
+                          </button>
+                        )}
                       </>
                     )}
                     <button className={styles.removeBtn} onClick={() => removeItem(i)}>✕</button>
@@ -299,172 +492,13 @@ export default function VideoStitcherNode({ id, data, selected }) {
                 </div>
               )}
 
-              {editingSeqLabelIdx === i && item.type === 'fixed' && isImage(item.value) && (() => {
-                const sl = item.sequenceLabel ?? {}
-                const enabled = sl.enabled ?? false
-                return (
-                  <div className={styles.seqLabelPanel}>
-                    <div className={styles.seqLabelRow}>
-                      <label className={styles.seqLabelToggle}>
-                        <input
-                          type="checkbox"
-                          checked={enabled}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setItemSequenceLabel(i, { enabled: true })
-                            } else {
-                              clearItemSequenceLabel(i)
-                            }
-                          }}
-                        />
-                        <span>Enable sequence number</span>
-                      </label>
-                    </div>
-                    {enabled && !sl.fontFile && (
-                      <div className={styles.seqLabelRow}>
-                        <span className={styles.seqLabelWarn}>⚠ A font file is required — select one below before the label will render.</span>
-                      </div>
-                    )}
-                    {enabled && (
-                      <>
-                        <div className={styles.seqLabelRow}>
-                          <span className={styles.seqLabelKey}>Prefix</span>
-                          <input
-                            className={`${styles.input} ${styles.seqLabelInput}`}
-                            type="text"
-                            placeholder='e.g. "scene" → scene 1/10'
-                            value={sl.prefix ?? ''}
-                            onChange={(e) => setItemSequenceLabel(i, { prefix: e.target.value || undefined })}
-                          />
-                        </div>
-                        <div className={styles.seqLabelRow}>
-                          <span className={styles.seqLabelKey}>Total offset</span>
-                          <div className={styles.stepperRow}>
-                            <input
-                              className={`${styles.input} ${styles.seqLabelInput}`}
-                              type="text"
-                              inputMode="numeric"
-                              value={sl.totalOffset ?? 0}
-                              onChange={(e) => {
-                                const v = parseInt(e.target.value, 10)
-                                if (!isNaN(v)) setItemSequenceLabel(i, { totalOffset: v })
-                              }}
-                              onPointerDown={(e) => e.stopPropagation()}
-                            />
-                            <div className={styles.stepperBtns}>
-                              <button
-                                className={styles.stepBtn}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onClick={() => setItemSequenceLabel(i, { totalOffset: (sl.totalOffset ?? 0) + 1 })}
-                              >▲</button>
-                              <button
-                                className={styles.stepBtn}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onClick={() => setItemSequenceLabel(i, { totalOffset: (sl.totalOffset ?? 0) - 1 })}
-                              >▼</button>
-                            </div>
-                          </div>
-                        </div>
-                        <div className={styles.seqLabelRow}>
-                          <span className={styles.seqLabelKey}>Font file</span>
-                          <FileInput
-                            placeholder="/path/to/font.ttf"
-                            value={sl.fontFile ?? ''}
-                            accept=".ttf,.otf,.ttc"
-                            onChange={(v) => setItemSequenceLabel(i, { fontFile: v || undefined })}
-                          />
-                        </div>
-                        <div className={styles.seqLabelRow}>
-                          <span className={styles.seqLabelKey}>Font size</span>
-                          <div className={styles.stepperRow}>
-                            <input
-                              className={`${styles.input} ${styles.seqLabelInput}`}
-                              type="text"
-                              inputMode="numeric"
-                              value={sl.fontSize ?? 48}
-                              onChange={(e) => {
-                                const v = parseInt(e.target.value, 10)
-                                if (!isNaN(v) && v > 0) setItemSequenceLabel(i, { fontSize: v })
-                              }}
-                            />
-                            <div className={styles.stepperBtns}>
-                              <button
-                                className={styles.stepBtn}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onClick={() => setItemSequenceLabel(i, { fontSize: (sl.fontSize ?? 48) + 2 })}
-                              >▲</button>
-                              <button
-                                className={styles.stepBtn}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onClick={() => setItemSequenceLabel(i, { fontSize: Math.max(8, (sl.fontSize ?? 48) - 2) })}
-                              >▼</button>
-                            </div>
-                          </div>
-                        </div>
-                        <div className={styles.seqLabelRow}>
-                          <span className={styles.seqLabelKey}>Font color</span>
-                          <input
-                            className={`${styles.input} ${styles.seqLabelInput}`}
-                            type="text"
-                            placeholder="white"
-                            value={sl.fontColor ?? ''}
-                            onChange={(e) => setItemSequenceLabel(i, { fontColor: e.target.value || undefined })}
-                          />
-                        </div>
-                        <div className={styles.seqLabelRow}>
-                          <label className={styles.seqLabelToggle}>
-                            <input
-                              type="checkbox"
-                              checked={sl.box ?? false}
-                              onChange={(e) => setItemSequenceLabel(i, { box: e.target.checked })}
-                            />
-                            <span>Background box</span>
-                          </label>
-                        </div>
-                        {sl.box && (
-                          <div className={styles.seqLabelRow}>
-                            <span className={styles.seqLabelKey}>Box color</span>
-                            <input
-                              className={`${styles.input} ${styles.seqLabelInput}`}
-                              type="text"
-                              placeholder="black@0.5"
-                              value={sl.boxColor ?? ''}
-                              onChange={(e) => setItemSequenceLabel(i, { boxColor: e.target.value || undefined })}
-                            />
-                          </div>
-                        )}
-                        <div className={styles.seqLabelRow}>
-                          <span className={styles.seqLabelKey}>Padding (px)</span>
-                          <div className={styles.stepperRow}>
-                            <input
-                              className={`${styles.input} ${styles.seqLabelInput}`}
-                              type="text"
-                              inputMode="numeric"
-                              value={sl.padding ?? 20}
-                              onChange={(e) => {
-                                const v = parseInt(e.target.value, 10)
-                                if (!isNaN(v) && v >= 0) setItemSequenceLabel(i, { padding: v })
-                              }}
-                            />
-                            <div className={styles.stepperBtns}>
-                              <button
-                                className={styles.stepBtn}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onClick={() => setItemSequenceLabel(i, { padding: (sl.padding ?? 20) + 2 })}
-                              >▲</button>
-                              <button
-                                className={styles.stepBtn}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onClick={() => setItemSequenceLabel(i, { padding: Math.max(0, (sl.padding ?? 20) - 2) })}
-                              >▼</button>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )
-              })()}
+              {editingSeqLabelIdx === i && item.type === 'fixed' && isImage(item.value) && !config.sequenceLabel?.enabled && (
+                <SequenceLabelPanel
+                  value={item.sequenceLabel}
+                  onSet={(partial) => setItemSequenceLabel(i, partial)}
+                  onClear={() => clearItemSequenceLabel(i)}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -530,6 +564,23 @@ export default function VideoStitcherNode({ id, data, selected }) {
               onChange={(e) => updateConfig(id, { bgAudioVolume: Number(e.target.value) })}
             />
           </>
+        )}
+
+        <div className={styles.sectionHeader}>
+          <label className={styles.fieldLabel}>Output video sequence label</label>
+          <button
+            className={`${styles.pencilBtn} ${editingVideoSeqLabel || config.sequenceLabel?.enabled ? styles.pencilActive : ''}`}
+            title={config.sequenceLabel?.enabled ? 'Edit whole-video sequence label' : 'Add sequence label to the whole output video'}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setEditingVideoSeqLabel((v) => !v)}
+          >#</button>
+        </div>
+        {editingVideoSeqLabel && (
+          <SequenceLabelPanel
+            value={config.sequenceLabel}
+            onSet={setVideoSequenceLabel}
+            onClear={clearVideoSequenceLabel}
+          />
         )}
       </div>
     </div>

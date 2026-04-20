@@ -19,15 +19,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('fs', () => ({
   existsSync: vi.fn(() => true),
   writeFileSync: vi.fn(),
+  unlinkSync: vi.fn(),
 }))
 
 vi.mock('../src/executor/runner.js', () => ({
   run: vi.fn(() => Promise.resolve()),
 }))
 
-import { existsSync, writeFileSync } from 'fs'
+import { existsSync, writeFileSync, unlinkSync } from 'fs'
 import { run } from '../src/executor/runner.js'
-import { annotateImageWithSequence } from '../src/executor/nodeHandlers/imageAnnotate.js'
+import { annotateImageWithSequence, annotateVideoWithSequence } from '../src/executor/nodeHandlers/imageAnnotate.js'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -113,6 +114,20 @@ describe('annotateImageWithSequence', () => {
       index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_img.png', dryRun: true,
     })
     expect(writeFileSync).not.toHaveBeenCalled()
+  })
+
+  it('deletes the sidecar text file after ffmpeg completes', async () => {
+    await annotateImageWithSequence('/img.png', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_img.png',
+    })
+    expect(unlinkSync).toHaveBeenCalledWith('/out/1_img.png.txt')
+  })
+
+  it('does not delete the sidecar text file in dry-run mode', async () => {
+    await annotateImageWithSequence('/img.png', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_img.png', dryRun: true,
+    })
+    expect(unlinkSync).not.toHaveBeenCalled()
   })
 
   // ── ffmpeg invocation ────────────────────────────────────────────────────
@@ -225,5 +240,109 @@ describe('annotateImageWithSequence', () => {
     const filterStr = run.mock.calls[0][1][7]
     // textfile= value should have the colon escaped
     expect(filterStr).toContain('textfile=C\\:/out/1_img.png.txt')
+  })
+})
+
+describe('annotateVideoWithSequence', () => {
+  it('throws when fontFile is not provided', async () => {
+    await expect(
+      annotateVideoWithSequence('/clip.mp4', {
+        index: 1, total: 3, destPath: '/out/1_clip.mp4',
+      })
+    ).rejects.toThrow('fontFile is required')
+  })
+
+  it('throws when fontFile path does not exist (non-dry-run)', async () => {
+    existsSync.mockReturnValue(false)
+    await expect(
+      annotateVideoWithSequence('/clip.mp4', {
+        index: 1, total: 3, fontFile: '/missing.ttf', destPath: '/out/1_clip.mp4',
+      })
+    ).rejects.toThrow('fontFile not found')
+  })
+
+  it('skips the existsSync check in dry-run mode', async () => {
+    existsSync.mockReturnValue(false)
+    await expect(
+      annotateVideoWithSequence('/clip.mp4', {
+        index: 1, total: 3, fontFile: '/missing.ttf', destPath: '/out/1_clip.mp4', dryRun: true,
+      })
+    ).resolves.toBeUndefined()
+    expect(existsSync).not.toHaveBeenCalled()
+  })
+
+  it('writes the label text to a sidecar file', async () => {
+    await annotateVideoWithSequence('/clip.mp4', {
+      index: 2, total: 5, prefix: 'ep', fontFile: '/f.ttf', destPath: '/out/2_clip.mp4',
+    })
+    expect(writeFileSync).toHaveBeenCalledOnce()
+    const [, text] = writeFileSync.mock.calls[0]
+    expect(text).toBe('ep 2/5')
+  })
+
+  it('applies totalOffset to the denominator', async () => {
+    await annotateVideoWithSequence('/clip.mp4', {
+      index: 3, total: 3, totalOffset: -1, fontFile: '/f.ttf', destPath: '/out/3_clip.mp4',
+    })
+    const [, text] = writeFileSync.mock.calls[0]
+    expect(text).toBe('3/2')
+  })
+
+  it('calls run with ffmpeg without -frames:v and with -c:a copy', async () => {
+    await annotateVideoWithSequence('/clip.mp4', {
+      index: 1, total: 4, fontFile: '/f.ttf', destPath: '/out/1_clip.mp4',
+    })
+    expect(run).toHaveBeenCalledOnce()
+    const [bin, argv] = run.mock.calls[0]
+    expect(bin).toBe('ffmpeg')
+    expect(argv).not.toContain('-frames:v')
+    expect(argv).not.toContain('1')
+    // -c:a copy must be present
+    const caIdx = argv.indexOf('-c:a')
+    expect(caIdx).toBeGreaterThan(-1)
+    expect(argv[caIdx + 1]).toBe('copy')
+  })
+
+  it('includes the drawtext filter with correct parameters', async () => {
+    await annotateVideoWithSequence('/clip.mp4', {
+      index: 1, total: 4, fontFile: '/f.ttf', destPath: '/out/1_clip.mp4',
+      fontSize: 60, fontColor: 'yellow', padding: 30,
+    })
+    const vfIdx = run.mock.calls[0][1].indexOf('-vf')
+    const filterStr = run.mock.calls[0][1][vfIdx + 1]
+    expect(filterStr).toContain('drawtext=fontfile=')
+    expect(filterStr).toContain('fontsize=60')
+    expect(filterStr).toContain('fontcolor=yellow')
+    expect(filterStr).toContain('x=w-tw-30')
+    expect(filterStr).toContain('y=h-th-30')
+  })
+
+  it('skips writeFileSync in dry-run mode', async () => {
+    await annotateVideoWithSequence('/clip.mp4', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_clip.mp4', dryRun: true,
+    })
+    expect(writeFileSync).not.toHaveBeenCalled()
+  })
+
+  it('deletes the sidecar text file after ffmpeg completes', async () => {
+    await annotateVideoWithSequence('/clip.mp4', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_clip.mp4',
+    })
+    expect(unlinkSync).toHaveBeenCalledWith('/out/1_clip.mp4.txt')
+  })
+
+  it('does not delete the sidecar text file in dry-run mode', async () => {
+    await annotateVideoWithSequence('/clip.mp4', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_clip.mp4', dryRun: true,
+    })
+    expect(unlinkSync).not.toHaveBeenCalled()
+  })
+
+  it('passes dryRun: true to run() in dry-run mode', async () => {
+    await annotateVideoWithSequence('/clip.mp4', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_clip.mp4', dryRun: true,
+    })
+    const [, , opts] = run.mock.calls[0]
+    expect(opts.dryRun).toBe(true)
   })
 })

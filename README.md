@@ -57,7 +57,7 @@ The editor lets you:
 - Set a glob filter on Input Folder nodes (e.g. `*.mp4`; blank = all files)
 - Drag inputs to reorder them within a Stitcher node
 - Set per-image duration overrides (✎ pencil icon on image inputs)
-- Burn a sequence number label (e.g. `scene 3/10`) into fixed image inputs via the **#** button — configure prefix, font, size, colour, background box, padding, and a total offset to adjust the denominator
+- Burn a sequence number label (e.g. `scene 3/10`) into fixed image inputs via the **#** button on an image row, or into the whole output video via the **#** button in the *Output video sequence label* section — configure prefix, font, size, colour, background box, padding, and a total offset to adjust the denominator (the two scopes are mutually exclusive)
 - Delete nodes with the **×** button that appears on hover
 - Save with **⌘S** (macOS) / **Ctrl+S** (Windows/Linux) or the Save button
 
@@ -196,9 +196,14 @@ Connect an **Output Folder** node to override. Multiple Output Folder nodes can 
 | `imageDuration` | `number` | Per-image duration override in seconds (fixed image items only) |
 | `sequenceLabel` | `object` | Burn a sequence number into a fixed image input (see below) |
 
-### `sequenceLabel` (fixed image inputs)
+### `sequenceLabel`
 
-Burns text like `scene 3/10` into the bottom-right corner of an image using FFmpeg `drawtext`. Requires a TTF/OTF font file.
+Burns text like `scene 3/10` into the bottom-right corner of a media file using FFmpeg `drawtext`. Requires a TTF/OTF font file. Works at two scopes:
+
+- **Per image input** — set on an `inputOrder` item (via the **#** button on an image row). Only fires for that specific image in every stitcher run.
+- **Whole output video** — set at the top level of `stitcherConfig` (via the **#** button in the *Output video sequence label* section). Burns the label into the final stitched MP4 as a post-stitch ffmpeg pass.
+
+**These two scopes are mutually exclusive.** Enabling the whole-video label disables the per-image `#` buttons in the editor and suppresses per-image annotation at runtime even if stale per-image config is present. `video-pipeline validate` also reports an error if both are enabled simultaneously.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|

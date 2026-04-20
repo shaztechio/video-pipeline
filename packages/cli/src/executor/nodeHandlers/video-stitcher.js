@@ -18,7 +18,7 @@ import os from 'os'
 import path from 'path'
 import { mkdirSync, existsSync, copyFileSync } from 'fs'
 import { run } from '../runner.js'
-import { annotateImageWithSequence } from './imageAnnotate.js'
+import { annotateImageWithSequence, annotateVideoWithSequence } from './imageAnnotate.js'
 
 const IMAGE_EXTS = /\.(png|jpe?g|gif|webp|bmp|tiff?|avif|svg)$/i
 
@@ -178,9 +178,20 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
       )
     }
 
-    // Pre-process any fixed image inputs that have sequenceLabel.enabled
+    const videoSl = config.sequenceLabel
+
+    // When whole-video sequence label is enabled, stitch to a temp path first so
+    // we can run the drawtext pass on it to produce the final outputFile.
+    const stitchTarget = videoSl?.enabled
+      ? path.join(tempRoot, node.id, 'prelabel', name)
+      : outputFile
+    if (videoSl?.enabled && !opts.dryRun) mkdirSync(path.dirname(stitchTarget), { recursive: true })
+
+    // Pre-process any fixed image inputs that have sequenceLabel.enabled.
+    // Skip if whole-video label is active (mutual exclusion enforced at runtime).
     const resolvedInputs = await Promise.all(
       inputs.map(async (input) => {
+        if (videoSl?.enabled) return input
         const sl = input.sequenceLabel
         if (!sl?.enabled || !isImage(input.value)) return input
 
@@ -212,7 +223,7 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
     )
 
     const cliInputs = resolvedInputs.map(flattenInput)
-    const argv = [...cliInputs, '-o', outputFile]
+    const argv = [...cliInputs, '-o', stitchTarget]
 
     if (config.imageDuration != null && config.imageDuration !== 1) {
       argv.push('-d', String(config.imageDuration))
@@ -228,6 +239,24 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
       label: node.label ?? node.id,
       dryRun: opts.dryRun
     })
+
+    if (videoSl?.enabled) {
+      await annotateVideoWithSequence(stitchTarget, {
+        index: runIdx + 1,
+        total: runCount,
+        prefix: videoSl.prefix,
+        fontFile: videoSl.fontFile,
+        fontSize: videoSl.fontSize,
+        fontColor: videoSl.fontColor,
+        box: videoSl.box,
+        boxColor: videoSl.boxColor,
+        padding: videoSl.padding,
+        totalOffset: videoSl.totalOffset,
+        destPath: outputFile,
+        label: `${node.label ?? node.id} [label ${runIdx + 1}/${runCount}]`,
+        dryRun: opts.dryRun,
+      })
+    }
 
     outputFiles.push(outputFile)
   }
