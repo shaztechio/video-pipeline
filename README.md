@@ -57,7 +57,7 @@ The editor lets you:
 - Set a glob filter on Input Folder nodes (e.g. `*.mp4`; blank = all files)
 - Drag inputs to reorder them within a Stitcher node
 - Set per-image duration overrides (✎ pencil icon on image inputs)
-- Burn a sequence number label (e.g. `scene 3/10`) into fixed image inputs via the **#** button on an image row, or into the whole output video via the **#** button in the *Output video sequence label* section — configure prefix, font, size, colour, background box, padding, position (9 presets + custom X/Y), total offset, and a start delay (whole-video only). Per-image and whole-video labels can be combined.
+- Burn a sequence number label (e.g. `scene 3/10`) into fixed image inputs via the **#** button on an image row, or into the whole output video via the **#** button in the *Output video sequence label* section — configure prefix, font, size, colour, stroke colour and width, background box, padding, position (9 presets + custom X/Y), total offset, and a start delay (whole-video only). Per-image and whole-video labels can be combined.
 - Delete nodes with the **×** button that appears on hover
 - Save with **⌘S** (macOS) / **Ctrl+S** (Windows/Linux) or the Save button
 
@@ -212,6 +212,8 @@ Burns text like `scene 3/10` into a configurable corner of a media file using FF
 | `fontFile` | `string` | — | Path to a `.ttf`/`.otf`/`.ttc` font file (required) |
 | `fontSize` | `number` | `48` | Font size in pixels |
 | `fontColor` | `string` | `"white"` | FFmpeg colour string, e.g. `"white"`, `"yellow"` |
+| `borderColor` | `string` | — | Colour of the text stroke/outline, e.g. `"black"` (only when `borderWidth` > 0) |
+| `borderWidth` | `number` | — | Width of the text stroke in pixels. Omit or set to `0` to disable. |
 | `box` | `boolean` | `false` | Draw a semi-transparent background box behind the text |
 | `boxColor` | `string` | `"black@0.5"` | FFmpeg colour string for the box (only when `box` is `true`) |
 | `padding` | `number` | `20` | Distance from the nearest edges in pixels (used by all presets) |
