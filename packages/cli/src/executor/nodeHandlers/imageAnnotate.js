@@ -50,6 +50,8 @@ function buildDrawtextArgs(srcLabel, {
   fontFile,
   fontSize = 48,
   fontColor = 'white',
+  borderColor,
+  borderWidth,
   box = false,
   boxColor = 'black@0.5',
   padding = 20,
@@ -89,6 +91,11 @@ function buildDrawtextArgs(srcLabel, {
     `:x=${x}` +
     `:y=${y}`
 
+  if (borderWidth != null && borderWidth > 0) {
+    filterStr += `:borderw=${borderWidth}`
+    if (borderColor) filterStr += `:bordercolor=${borderColor}`
+  }
+
   if (box) {
     filterStr += `:box=1:boxcolor=${boxColor}:boxborderw=8`
   }
@@ -112,6 +119,8 @@ function buildDrawtextArgs(srcLabel, {
  * @param {string}  opts.fontFile  - path to a .ttf/.otf/.ttc font file (required)
  * @param {number}  [opts.fontSize=48]
  * @param {string}  [opts.fontColor='white']
+ * @param {string}  [opts.borderColor]        - color of text stroke/outline (e.g. 'black')
+ * @param {number}  [opts.borderWidth]        - width of text stroke in pixels (0 = off)
  * @param {boolean} [opts.box=false]          - draw a semi-transparent background box
  * @param {string}  [opts.boxColor='black@0.5']
  * @param {number}  [opts.padding=20]         - px distance from edges (used by presets)
