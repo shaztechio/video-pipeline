@@ -258,6 +258,7 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
         position: videoSl.position,
         customX: videoSl.customX,
         customY: videoSl.customY,
+        startAt: videoSl.startAt,
         destPath: outputFile,
         label: `${node.label ?? node.id} [label ${runIdx + 1}/${runCount}]`,
         dryRun: opts.dryRun,

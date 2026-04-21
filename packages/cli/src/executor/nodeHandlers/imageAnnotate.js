@@ -56,6 +56,7 @@ function buildDrawtextArgs(srcLabel, {
   position = 'bottom-right',
   customX = 0,
   customY = 0,
+  startAt = 0,
   destPath,
   dryRun = false,
 }) {
@@ -92,6 +93,10 @@ function buildDrawtextArgs(srcLabel, {
     filterStr += `:box=1:boxcolor=${boxColor}:boxborderw=8`
   }
 
+  if (startAt > 0) {
+    filterStr += `:enable=gte(t\\,${startAt})`
+  }
+
   return { text, textFile, filterStr }
 }
 
@@ -114,13 +119,14 @@ function buildDrawtextArgs(srcLabel, {
  * @param {number}  [opts.customX=0]          - x pixel offset (only when position='custom')
  * @param {number}  [opts.customY=0]          - y pixel offset (only when position='custom')
  * @param {number}  [opts.totalOffset=0]      - integer added to the denominator
+ * @param {number}  [opts.startAt=0]          - (video only) seconds before label appears; ignored for images
  * @param {string}  opts.destPath  - absolute path to write the annotated image
  * @param {string}  [opts.label]   - display label for the run() spinner
  * @param {boolean} [opts.dryRun=false]
  */
 export async function annotateImageWithSequence(srcPath, opts) {
   const { destPath, label, dryRun = false, index, total } = opts
-  const { text, textFile, filterStr } = buildDrawtextArgs(srcPath, opts)
+  const { text, textFile, filterStr } = buildDrawtextArgs(srcPath, { ...opts, startAt: 0 })
 
   console.log(
     chalk.dim(`  [seq-label] Annotating ${path.basename(srcPath)} `) +

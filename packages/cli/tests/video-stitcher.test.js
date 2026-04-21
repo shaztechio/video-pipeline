@@ -1111,6 +1111,22 @@ describe('handleVideoStitcher', () => {
     expect(annotateVideoWithSequence).toHaveBeenCalledTimes(1)
   })
 
+  it('forwards startAt from whole-video sequenceLabel to annotateVideoWithSequence', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        { type: 'fixed', value: '/intro.mp4' },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+      sequenceLabel: { enabled: true, fontFile: '/f.ttf', startAt: 5 },
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    const [, opts] = annotateVideoWithSequence.mock.calls[0]
+    expect(opts.startAt).toBe(5)
+  })
+
   it('does not call annotateVideoWithSequence when config.sequenceLabel.enabled is false', async () => {
     const node = makeNode('stitch1', {
       inputOrder: [

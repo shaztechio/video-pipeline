@@ -26,7 +26,7 @@ function isImage(filePath) {
   return filePath ? IMAGE_EXTS.test(filePath) : false
 }
 
-function SequenceLabelPanel({ value, onSet, onClear }) {
+function SequenceLabelPanel({ value, onSet, onClear, videoScope = false }) {
   const sl = value ?? {}
   const enabled = sl.enabled ?? false
   return (
@@ -265,6 +265,36 @@ function SequenceLabelPanel({ value, onSet, onClear }) {
                 </div>
               </div>
             </>
+          )}
+          {videoScope && (
+            <div className={styles.seqLabelRow}>
+              <span className={styles.seqLabelKey}>Start at (s)</span>
+              <div className={styles.stepperRow}>
+                <input
+                  className={`${styles.input} ${styles.seqLabelInput}`}
+                  type="text"
+                  inputMode="numeric"
+                  value={sl.startAt ?? 0}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10)
+                    if (!isNaN(v) && v >= 0) onSet({ startAt: v })
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                />
+                <div className={styles.stepperBtns}>
+                  <button
+                    className={styles.stepBtn}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => onSet({ startAt: (sl.startAt ?? 0) + 1 })}
+                  >▲</button>
+                  <button
+                    className={styles.stepBtn}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => onSet({ startAt: Math.max(0, (sl.startAt ?? 0) - 1) })}
+                  >▼</button>
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}
@@ -642,6 +672,7 @@ export default function VideoStitcherNode({ id, data, selected }) {
             value={config.sequenceLabel}
             onSet={setVideoSequenceLabel}
             onClear={clearVideoSequenceLabel}
+            videoScope
           />
         )}
       </div>

@@ -402,3 +402,34 @@ describe('position presets', () => {
     expect(f).toContain('y=h-th-20')
   })
 })
+
+describe('startAt offset', () => {
+  beforeEach(() => { run.mockClear(); existsSync.mockReturnValue(true) })
+
+  const base = { index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1.mp4' }
+
+  const getFilterStr = () => {
+    const vfIdx = run.mock.calls[0][1].indexOf('-vf')
+    return run.mock.calls[0][1][vfIdx + 1]
+  }
+
+  it('annotateVideoWithSequence with startAt:3 adds enable=gte(t\\,3) to filter', async () => {
+    await annotateVideoWithSequence('/clip.mp4', { ...base, startAt: 3 })
+    expect(getFilterStr()).toContain('enable=gte(t\\,3)')
+  })
+
+  it('annotateVideoWithSequence with startAt:0 omits enable clause', async () => {
+    await annotateVideoWithSequence('/clip.mp4', { ...base, startAt: 0 })
+    expect(getFilterStr()).not.toContain('enable=')
+  })
+
+  it('annotateVideoWithSequence without startAt omits enable clause', async () => {
+    await annotateVideoWithSequence('/clip.mp4', base)
+    expect(getFilterStr()).not.toContain('enable=')
+  })
+
+  it('annotateImageWithSequence ignores startAt — no enable clause emitted', async () => {
+    await annotateImageWithSequence('/img.png', { ...base, destPath: '/out/1.png', startAt: 5 })
+    expect(getFilterStr()).not.toContain('enable=')
+  })
+})
