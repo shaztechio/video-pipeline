@@ -139,6 +139,47 @@ function SequenceLabelPanel({ value, onSet, onClear, videoScope = false }) {
             />
           </div>
           <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Stroke color</span>
+            <input
+              className={`${styles.input} ${styles.seqLabelInput}`}
+              type="text"
+              placeholder="black"
+              value={sl.borderColor ?? ''}
+              onChange={(e) => onSet({ borderColor: e.target.value || undefined })}
+            />
+          </div>
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Stroke width</span>
+            <div className={styles.stepperRow}>
+              <input
+                className={`${styles.input} ${styles.seqLabelInput}`}
+                type="text"
+                inputMode="numeric"
+                value={sl.borderWidth ?? 0}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  if (!isNaN(v) && v >= 0) onSet({ borderWidth: v || undefined })
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+              <div className={styles.stepperBtns}>
+                <button
+                  className={styles.stepBtn}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSet({ borderWidth: (sl.borderWidth ?? 0) + 1 })}
+                >▲</button>
+                <button
+                  className={styles.stepBtn}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    const next = Math.max(0, (sl.borderWidth ?? 0) - 1)
+                    onSet({ borderWidth: next || undefined })
+                  }}
+                >▼</button>
+              </div>
+            </div>
+          </div>
+          <div className={styles.seqLabelRow}>
             <label className={styles.seqLabelToggle}>
               <input
                 type="checkbox"

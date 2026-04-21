@@ -221,6 +221,35 @@ describe('annotateImageWithSequence', () => {
     expect(filterStr).toContain('boxcolor=navy@0.8')
   })
 
+  it('includes borderw and bordercolor when borderWidth > 0 and borderColor set', async () => {
+    await annotateImageWithSequence('/img.png', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_img.png',
+      borderWidth: 3, borderColor: 'black',
+    })
+    const filterStr = run.mock.calls[0][1][7]
+    expect(filterStr).toContain('borderw=3')
+    expect(filterStr).toContain('bordercolor=black')
+  })
+
+  it('includes borderw without bordercolor when borderColor is not set', async () => {
+    await annotateImageWithSequence('/img.png', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_img.png',
+      borderWidth: 2,
+    })
+    const filterStr = run.mock.calls[0][1][7]
+    expect(filterStr).toContain('borderw=2')
+    expect(filterStr).not.toContain('bordercolor')
+  })
+
+  it('omits borderw when borderWidth is 0', async () => {
+    await annotateImageWithSequence('/img.png', {
+      index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/1_img.png',
+      borderWidth: 0,
+    })
+    const filterStr = run.mock.calls[0][1][7]
+    expect(filterStr).not.toContain('borderw')
+  })
+
   it('escapes colons in fontFile path for ffmpeg filter syntax', async () => {
     // Windows-style path with a colon after the drive letter
     const winPath = 'C:/fonts/Arial.ttf'
