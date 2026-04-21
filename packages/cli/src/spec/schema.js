@@ -64,16 +64,6 @@ export function validateSpec(spec) {
     if (!node.config || typeof node.config !== 'object') {
       errors.push(`Node "${node.id}" missing config object`)
     }
-
-    if (node.type === 'video-stitcher' && node.config) {
-      const videoSlEnabled = node.config.sequenceLabel?.enabled === true
-      const imageSlEnabled = (node.config.inputOrder ?? []).some((i) => i.sequenceLabel?.enabled === true)
-      if (videoSlEnabled && imageSlEnabled) {
-        errors.push(
-          `Node "${node.id}" (video-stitcher): config.sequenceLabel.enabled and per-image sequenceLabel.enabled are mutually exclusive`
-        )
-      }
-    }
   }
 
   for (const edge of spec.edges) {

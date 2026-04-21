@@ -30,6 +30,14 @@ function escapeFilterPath(p) {
   return p.replace(/\\/g, '\\\\').replace(/:/g, '\\:').replace(/'/g, "\\'")
 }
 
+function computePositionXY({ position = 'bottom-right', padding = 20, customX = 0, customY = 0 }) {
+  if (position === 'custom') return { x: String(customX), y: String(customY) }
+  const H = { left: String(padding), center: '(w-tw)/2', right: `w-tw-${padding}` }
+  const V = { top: String(padding), center: '(h-th)/2', bottom: `h-th-${padding}` }
+  const parts = position.split('-')
+  return { x: H[parts[1] ?? 'center'], y: V[parts[0]] }
+}
+
 /**
  * Validates fontFile and composes the drawtext filter string and sidecar text file path.
  * Shared by both image and video annotation helpers.
@@ -45,6 +53,10 @@ function buildDrawtextArgs(srcLabel, {
   box = false,
   boxColor = 'black@0.5',
   padding = 20,
+  position = 'bottom-right',
+  customX = 0,
+  customY = 0,
+  startAt = 0,
   destPath,
   dryRun = false,
 }) {
@@ -67,8 +79,7 @@ function buildDrawtextArgs(srcLabel, {
 
   const escapedFontFile = escapeFilterPath(fontFile)
   const escapedTextFile = escapeFilterPath(textFile)
-  const x = `w-tw-${padding}`
-  const y = `h-th-${padding}`
+  const { x, y } = computePositionXY({ position, padding, customX, customY })
 
   let filterStr =
     `drawtext=fontfile=${escapedFontFile}` +
@@ -80,6 +91,10 @@ function buildDrawtextArgs(srcLabel, {
 
   if (box) {
     filterStr += `:box=1:boxcolor=${boxColor}:boxborderw=8`
+  }
+
+  if (startAt > 0) {
+    filterStr += `:enable=gte(t\\,${startAt})`
   }
 
   return { text, textFile, filterStr }
@@ -99,15 +114,19 @@ function buildDrawtextArgs(srcLabel, {
  * @param {string}  [opts.fontColor='white']
  * @param {boolean} [opts.box=false]          - draw a semi-transparent background box
  * @param {string}  [opts.boxColor='black@0.5']
- * @param {number}  [opts.padding=20]         - px distance from right & bottom edges
+ * @param {number}  [opts.padding=20]         - px distance from edges (used by presets)
+ * @param {string}  [opts.position='bottom-right'] - one of the 9 presets or 'custom'
+ * @param {number}  [opts.customX=0]          - x pixel offset (only when position='custom')
+ * @param {number}  [opts.customY=0]          - y pixel offset (only when position='custom')
  * @param {number}  [opts.totalOffset=0]      - integer added to the denominator
+ * @param {number}  [opts.startAt=0]          - (video only) seconds before label appears; ignored for images
  * @param {string}  opts.destPath  - absolute path to write the annotated image
  * @param {string}  [opts.label]   - display label for the run() spinner
  * @param {boolean} [opts.dryRun=false]
  */
 export async function annotateImageWithSequence(srcPath, opts) {
   const { destPath, label, dryRun = false, index, total } = opts
-  const { text, textFile, filterStr } = buildDrawtextArgs(srcPath, opts)
+  const { text, textFile, filterStr } = buildDrawtextArgs(srcPath, { ...opts, startAt: 0 })
 
   console.log(
     chalk.dim(`  [seq-label] Annotating ${path.basename(srcPath)} `) +

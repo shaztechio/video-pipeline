@@ -57,7 +57,7 @@ The editor lets you:
 - Set a glob filter on Input Folder nodes (e.g. `*.mp4`; blank = all files)
 - Drag inputs to reorder them within a Stitcher node
 - Set per-image duration overrides (✎ pencil icon on image inputs)
-- Burn a sequence number label (e.g. `scene 3/10`) into fixed image inputs via the **#** button on an image row, or into the whole output video via the **#** button in the *Output video sequence label* section — configure prefix, font, size, colour, background box, padding, and a total offset to adjust the denominator (the two scopes are mutually exclusive)
+- Burn a sequence number label (e.g. `scene 3/10`) into fixed image inputs via the **#** button on an image row, or into the whole output video via the **#** button in the *Output video sequence label* section — configure prefix, font, size, colour, background box, padding, position (9 presets + custom X/Y), total offset, and a start delay (whole-video only). Per-image and whole-video labels can be combined.
 - Delete nodes with the **×** button that appears on hover
 - Save with **⌘S** (macOS) / **Ctrl+S** (Windows/Linux) or the Save button
 
@@ -198,12 +198,12 @@ Connect an **Output Folder** node to override. Multiple Output Folder nodes can 
 
 ### `sequenceLabel`
 
-Burns text like `scene 3/10` into the bottom-right corner of a media file using FFmpeg `drawtext`. Requires a TTF/OTF font file. Works at two scopes:
+Burns text like `scene 3/10` into a configurable corner of a media file using FFmpeg `drawtext` (default: bottom-right). Requires a TTF/OTF font file. Works at two scopes:
 
 - **Per image input** — set on an `inputOrder` item (via the **#** button on an image row). Only fires for that specific image in every stitcher run.
 - **Whole output video** — set at the top level of `stitcherConfig` (via the **#** button in the *Output video sequence label* section). Burns the label into the final stitched MP4 as a post-stitch ffmpeg pass.
 
-**These two scopes are mutually exclusive.** Enabling the whole-video label disables the per-image `#` buttons in the editor and suppresses per-image annotation at runtime even if stale per-image config is present. `video-pipeline validate` also reports an error if both are enabled simultaneously.
+**Per-image and whole-video scopes can be combined.** Per-image labels are baked into each image before stitching; the whole-video label is then drawn on top of the final stitched video, so both can appear simultaneously without conflict. Use `startAt` to delay the whole-video label's first appearance (e.g. `"startAt": 3` keeps the label hidden for the first 3 seconds).
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -214,8 +214,12 @@ Burns text like `scene 3/10` into the bottom-right corner of a media file using 
 | `fontColor` | `string` | `"white"` | FFmpeg colour string, e.g. `"white"`, `"yellow"` |
 | `box` | `boolean` | `false` | Draw a semi-transparent background box behind the text |
 | `boxColor` | `string` | `"black@0.5"` | FFmpeg colour string for the box (only when `box` is `true`) |
-| `padding` | `number` | `20` | Distance from the right and bottom edges in pixels |
+| `padding` | `number` | `20` | Distance from the nearest edges in pixels (used by all presets) |
 | `totalOffset` | `number` | `0` | Integer added to the total count in the denominator. Use `-1` to make the last segment overflow intentionally (e.g. 9 runs → `1/8` … `9/8`). |
+| `position` | `string` | `"bottom-right"` | Placement preset: `top-left`, `top-center`, `top-right`, `center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, `bottom-right`, or `custom` |
+| `customX` | `integer` | `0` | Horizontal pixel offset from the top-left corner (only when `position` is `"custom"`) |
+| `customY` | `integer` | `0` | Vertical pixel offset from the top-left corner (only when `position` is `"custom"`) |
+| `startAt` | `integer` | `0` | *(whole-video only)* Seconds before the label first appears. `0` = visible from the start. |
 
 **Example** — thumbnail with `scene N/8` label (9 segments, last is discarded):
 

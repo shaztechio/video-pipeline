@@ -188,10 +188,10 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
     if (videoSl?.enabled && !opts.dryRun) mkdirSync(path.dirname(stitchTarget), { recursive: true })
 
     // Pre-process any fixed image inputs that have sequenceLabel.enabled.
-    // Skip if whole-video label is active (mutual exclusion enforced at runtime).
+    // Per-image and whole-video labels can both be active — per-image annotations
+    // get baked into frames and the whole-video pass then draws on top.
     const resolvedInputs = await Promise.all(
       inputs.map(async (input) => {
-        if (videoSl?.enabled) return input
         const sl = input.sequenceLabel
         if (!sl?.enabled || !isImage(input.value)) return input
 
@@ -213,6 +213,9 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
           boxColor: sl.boxColor,
           padding: sl.padding,
           totalOffset: sl.totalOffset,
+          position: sl.position,
+          customX: sl.customX,
+          customY: sl.customY,
           destPath,
           label: `${node.label ?? node.id} [annotate ${runIdx + 1}/${runCount}]`,
           dryRun: opts.dryRun,
@@ -252,6 +255,10 @@ export async function handleVideoStitcher(node, context, tempRoot, incomingEdges
         boxColor: videoSl.boxColor,
         padding: videoSl.padding,
         totalOffset: videoSl.totalOffset,
+        position: videoSl.position,
+        customX: videoSl.customX,
+        customY: videoSl.customY,
+        startAt: videoSl.startAt,
         destPath: outputFile,
         label: `${node.label ?? node.id} [label ${runIdx + 1}/${runCount}]`,
         dryRun: opts.dryRun,
