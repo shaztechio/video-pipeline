@@ -20,6 +20,30 @@
   stroke: #a371f7;
 }
 
+.edge-delete-btn {
+  position: absolute;
+  pointer-events: all;
+  background: #21262d;
+  border: 1px solid #8b949e;
+  border-radius: 50%;
+  color: #c9d1d9;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.edge-delete-btn:hover {
+  background: #e94560;
+  border-color: #e94560;
+  color: #fff;
+}
+
 .react-flow__connection-path {
   stroke: #a371f7;
   stroke-width: 2;

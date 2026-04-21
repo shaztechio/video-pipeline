@@ -201,9 +201,9 @@ describe('validateSpec', () => {
     expect(result.errors).toContain('Edge "e2" references unknown target node: NONEXISTENT')
   })
 
-  // ── video-stitcher sequenceLabel mutual exclusion ─────────────────────────
+  // ── video-stitcher sequenceLabel scopes ───────────────────────────────────
 
-  it('returns invalid when both config.sequenceLabel.enabled and a per-image sequenceLabel.enabled are true', () => {
+  it('returns valid when both config.sequenceLabel.enabled and a per-image sequenceLabel.enabled are true (scopes combine)', () => {
     const spec = {
       version: '1',
       name: 'x',
@@ -220,8 +220,7 @@ describe('validateSpec', () => {
       edges: []
     }
     const result = validateSpec(spec)
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('mutually exclusive'))).toBe(true)
+    expect(result).toEqual({ valid: true })
   })
 
   it('returns valid when only config.sequenceLabel.enabled is true (no per-image)', () => {

@@ -829,6 +829,56 @@ describe('handleVideoStitcher', () => {
     expect(opts.padding).toBe(30)
   })
 
+  it('passes position and customX/customY options to annotateImageWithSequence', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        {
+          type: 'fixed',
+          value: '/title.png',
+          sequenceLabel: {
+            enabled: true,
+            fontFile: '/fonts/Arial.ttf',
+            position: 'top-left',
+          },
+        },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    const [, opts] = annotateImageWithSequence.mock.calls[0]
+    expect(opts.position).toBe('top-left')
+  })
+
+  it('passes position=custom with customX/customY to annotateImageWithSequence', async () => {
+    const node = makeNode('stitch1', {
+      inputOrder: [
+        {
+          type: 'fixed',
+          value: '/title.png',
+          sequenceLabel: {
+            enabled: true,
+            fontFile: '/fonts/Arial.ttf',
+            position: 'custom',
+            customX: 50,
+            customY: 80,
+          },
+        },
+        { type: 'edge', nodeId: 'cutter1' },
+      ],
+    })
+    const ctx = makeContext({ cutter1: { outputs: ['/seg1.mp4'] } })
+
+    await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
+
+    const [, opts] = annotateImageWithSequence.mock.calls[0]
+    expect(opts.position).toBe('custom')
+    expect(opts.customX).toBe(50)
+    expect(opts.customY).toBe(80)
+  })
+
   it('annotates each run with increasing index and correct total', async () => {
     const node = makeNode('stitch1', {
       inputOrder: [
@@ -1045,7 +1095,7 @@ describe('handleVideoStitcher', () => {
     expect(annotOpts.destPath).not.toContain('prelabel')
   })
 
-  it('skips per-image annotation when whole-video label is active (mutual exclusion)', async () => {
+  it('runs both per-image and whole-video annotation when both are enabled', async () => {
     const node = makeNode('stitch1', {
       inputOrder: [
         { type: 'fixed', value: '/title.png', sequenceLabel: { enabled: true, fontFile: '/f.ttf' } },
@@ -1057,7 +1107,7 @@ describe('handleVideoStitcher', () => {
 
     await handleVideoStitcher(node, ctx, '/tmp/root', [{ source: 'cutter1', target: 'stitch1' }], { dryRun: true })
 
-    expect(annotateImageWithSequence).not.toHaveBeenCalled()
+    expect(annotateImageWithSequence).toHaveBeenCalledTimes(1)
     expect(annotateVideoWithSequence).toHaveBeenCalledTimes(1)
   })
 

@@ -33,7 +33,12 @@ import VideoStitcherNode from './nodes/VideoStitcherNode.jsx'
 import OutputFolderNode from './nodes/OutputFolderNode.jsx'
 import InputFileNode from './nodes/InputFileNode.jsx'
 import InputFolderNode from './nodes/InputFolderNode.jsx'
+import DeleteableEdge from './edges/DeleteableEdge.jsx'
 import './App.css'
+
+const EDGE_TYPES = {
+  default: DeleteableEdge
+}
 
 const NODE_TYPES = {
   'video-cutter': VideoCutterNode,
@@ -107,6 +112,7 @@ function AppInner() {
           nodes={nodes}
           edges={edges}
           nodeTypes={NODE_TYPES}
+          edgeTypes={EDGE_TYPES}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}

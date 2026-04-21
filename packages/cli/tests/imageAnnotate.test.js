@@ -346,3 +346,59 @@ describe('annotateVideoWithSequence', () => {
     expect(opts.dryRun).toBe(true)
   })
 })
+
+describe('position presets', () => {
+  beforeEach(() => { run.mockClear(); existsSync.mockReturnValue(true) })
+
+  const getFilterStr = () => {
+    const vfIdx = run.mock.calls[0][1].indexOf('-vf')
+    return run.mock.calls[0][1][vfIdx + 1]
+  }
+
+  const base = { index: 1, total: 3, fontFile: '/f.ttf', destPath: '/out/img.png', padding: 20 }
+
+  it.each([
+    ['top-left',     'x=20',         'y=20'],
+    ['top-center',   'x=(w-tw)/2',   'y=20'],
+    ['top-right',    'x=w-tw-20',    'y=20'],
+    ['center-left',  'x=20',         'y=(h-th)/2'],
+    ['center',       'x=(w-tw)/2',   'y=(h-th)/2'],
+    ['center-right', 'x=w-tw-20',    'y=(h-th)/2'],
+    ['bottom-left',  'x=20',         'y=h-th-20'],
+    ['bottom-center','x=(w-tw)/2',   'y=h-th-20'],
+    ['bottom-right', 'x=w-tw-20',    'y=h-th-20'],
+  ])('position %s yields %s and %s', async (position, xPart, yPart) => {
+    await annotateImageWithSequence('/img.png', { ...base, position })
+    const f = getFilterStr()
+    expect(f).toContain(xPart)
+    expect(f).toContain(yPart)
+  })
+
+  it('respects custom padding in corner presets', async () => {
+    await annotateImageWithSequence('/img.png', { ...base, position: 'top-left', padding: 30 })
+    const f = getFilterStr()
+    expect(f).toContain('x=30')
+    expect(f).toContain('y=30')
+  })
+
+  it('custom position uses customX and customY as pixel coords', async () => {
+    await annotateImageWithSequence('/img.png', { ...base, position: 'custom', customX: 120, customY: 40 })
+    const f = getFilterStr()
+    expect(f).toContain('x=120')
+    expect(f).toContain('y=40')
+  })
+
+  it('custom position defaults to x=0, y=0 when customX/customY are omitted', async () => {
+    await annotateImageWithSequence('/img.png', { ...base, position: 'custom' })
+    const f = getFilterStr()
+    expect(f).toContain('x=0')
+    expect(f).toContain('y=0')
+  })
+
+  it('default (no position field) behaves like bottom-right', async () => {
+    await annotateImageWithSequence('/img.png', base)
+    const f = getFilterStr()
+    expect(f).toContain('x=w-tw-20')
+    expect(f).toContain('y=h-th-20')
+  })
+})

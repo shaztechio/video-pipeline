@@ -187,6 +187,85 @@ function SequenceLabelPanel({ value, onSet, onClear }) {
               </div>
             </div>
           </div>
+          <div className={styles.seqLabelRow}>
+            <span className={styles.seqLabelKey}>Position</span>
+            <select
+              className={`${styles.input} ${styles.seqLabelInput}`}
+              value={sl.position ?? 'bottom-right'}
+              onChange={(e) => onSet({ position: e.target.value })}
+            >
+              <option value="top-left">Top left</option>
+              <option value="top-center">Top center</option>
+              <option value="top-right">Top right</option>
+              <option value="center-left">Center left</option>
+              <option value="center">Center</option>
+              <option value="center-right">Center right</option>
+              <option value="bottom-left">Bottom left</option>
+              <option value="bottom-center">Bottom center</option>
+              <option value="bottom-right">Bottom right</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          {(sl.position ?? 'bottom-right') === 'custom' && (
+            <>
+              <div className={styles.seqLabelRow}>
+                <span className={styles.seqLabelKey}>Custom X</span>
+                <div className={styles.stepperRow}>
+                  <input
+                    className={`${styles.input} ${styles.seqLabelInput}`}
+                    type="text"
+                    inputMode="numeric"
+                    value={sl.customX ?? 0}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10)
+                      if (!isNaN(v)) onSet({ customX: v })
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  />
+                  <div className={styles.stepperBtns}>
+                    <button
+                      className={styles.stepBtn}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => onSet({ customX: (sl.customX ?? 0) + 1 })}
+                    >▲</button>
+                    <button
+                      className={styles.stepBtn}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => onSet({ customX: (sl.customX ?? 0) - 1 })}
+                    >▼</button>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.seqLabelRow}>
+                <span className={styles.seqLabelKey}>Custom Y</span>
+                <div className={styles.stepperRow}>
+                  <input
+                    className={`${styles.input} ${styles.seqLabelInput}`}
+                    type="text"
+                    inputMode="numeric"
+                    value={sl.customY ?? 0}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10)
+                      if (!isNaN(v)) onSet({ customY: v })
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  />
+                  <div className={styles.stepperBtns}>
+                    <button
+                      className={styles.stepBtn}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => onSet({ customY: (sl.customY ?? 0) + 1 })}
+                    >▲</button>
+                    <button
+                      className={styles.stepBtn}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => onSet({ customY: (sl.customY ?? 0) - 1 })}
+                    >▼</button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
@@ -275,16 +354,6 @@ export default function VideoStitcherNode({ id, data, selected }) {
   }
 
   function setVideoSequenceLabel(partial) {
-    // When enabling whole-video label, set enabled=false on all per-image labels so
-    // the spec stays valid (per-image config is preserved, just not active).
-    if (partial.enabled === true) {
-      const disabledOrder = inputOrder.map((item) =>
-        item.sequenceLabel?.enabled
-          ? { ...item, sequenceLabel: { ...item.sequenceLabel, enabled: false } }
-          : item
-      )
-      syncOrder(disabledOrder)
-    }
     updateConfig(id, { sequenceLabel: { ...(config.sequenceLabel ?? {}), ...partial } })
   }
 
@@ -370,11 +439,6 @@ export default function VideoStitcherNode({ id, data, selected }) {
       </div>
 
       <div className={styles.body}>
-        {config.sequenceLabel?.enabled && (
-          <div className={styles.seqLabelRow}>
-            <span className={styles.seqLabelWarn}>⚠ Whole-video sequence label is enabled — per-image sequence labels are disabled.</span>
-          </div>
-        )}
         <div className={styles.sectionHeader}>
           <label className={styles.fieldLabel}>Inputs</label>
           <button className={styles.addBtn} onClick={addFixedInput}>+ Add file</button>
@@ -423,16 +487,14 @@ export default function VideoStitcherNode({ id, data, selected }) {
                         >
                           ✎
                         </button>
-                        {!config.sequenceLabel?.enabled && (
-                          <button
-                            className={`${styles.pencilBtn} ${editingSeqLabelIdx === i || item.sequenceLabel?.enabled ? styles.pencilActive : ''}`}
-                            title={item.sequenceLabel?.enabled ? `Sequence label: ${item.sequenceLabel.prefix ? item.sequenceLabel.prefix + ' ' : ''}N/M` : 'Add sequence number'}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={() => toggleSeqLabelEditor(i)}
-                          >
-                            #
-                          </button>
-                        )}
+                        <button
+                          className={`${styles.pencilBtn} ${editingSeqLabelIdx === i || item.sequenceLabel?.enabled ? styles.pencilActive : ''}`}
+                          title={item.sequenceLabel?.enabled ? `Sequence label: ${item.sequenceLabel.prefix ? item.sequenceLabel.prefix + ' ' : ''}N/M` : 'Add sequence number'}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={() => toggleSeqLabelEditor(i)}
+                        >
+                          #
+                        </button>
                       </>
                     )}
                     <button className={styles.removeBtn} onClick={() => removeItem(i)}>✕</button>
@@ -492,7 +554,7 @@ export default function VideoStitcherNode({ id, data, selected }) {
                 </div>
               )}
 
-              {editingSeqLabelIdx === i && item.type === 'fixed' && isImage(item.value) && !config.sequenceLabel?.enabled && (
+              {editingSeqLabelIdx === i && item.type === 'fixed' && isImage(item.value) && (
                 <SequenceLabelPanel
                   value={item.sequenceLabel}
                   onSet={(partial) => setItemSequenceLabel(i, partial)}

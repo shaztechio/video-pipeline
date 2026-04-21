@@ -100,7 +100,10 @@
         "box":         { "type": "boolean" },
         "boxColor":    { "type": "string" },
         "padding":     { "type": "integer", "minimum": 0 },
-        "totalOffset": { "type": "integer" }
+        "totalOffset": { "type": "integer" },
+        "position":    { "type": "string", "enum": ["top-left","top-center","top-right","center-left","center","center-right","bottom-left","bottom-center","bottom-right","custom"] },
+        "customX":     { "type": "integer" },
+        "customY":     { "type": "integer" }
       },
       "allOf": [
         {
